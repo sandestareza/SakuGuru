@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useRef, useCallback } from 'react';
+import Webcam from 'react-webcam';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, RotateCcw, X, Image as ImageIcon, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, RotateCcw, X, Image as ImageIcon, Send, SwitchCamera } from 'lucide-react';
 import type { AttendanceStatus, AttendanceRecord } from '@/types';
 
 const statusColors: Record<AttendanceStatus, { bg: string; text: string; label: string }> = {
@@ -27,6 +28,9 @@ function JournalContent() {
   const [material, setMaterial] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  const webcamRef = useRef<Webcam>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const schedule = state.schedules.find(s => s.id === scheduleId);
@@ -44,22 +48,50 @@ function JournalContent() {
     }
   }, [students, attendance.length]);
 
-  const toggleStatus = (studentId: string) => {
-    const order: AttendanceStatus[] = ['H', 'S', 'I', 'A'];
-    setAttendance(prev => prev.map(a => {
-      if (a.studentId !== studentId) return a;
-      const nextIndex = (order.indexOf(a.status) + 1) % order.length;
-      return { ...a, status: order[nextIndex] };
-    }));
+  const setStudentStatus = (studentId: string, status: AttendanceStatus) => {
+    setAttendance(prev => prev.map(a => 
+      a.studentId === studentId ? { ...a, status } : a
+    ));
   };
 
-  const simulatePhoto = () => {
-    if (photos.length >= 3) return;
-    // Simulate camera capture with placeholder
-    const colors = ['#1B4332', '#2D6A4F', '#D4AF37'];
-    const newPhoto = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="${colors[photos.length % 3]}" width="400" height="300"/><text x="200" y="140" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif">Foto Bukti KBM ${photos.length + 1}</text><text x="200" y="170" text-anchor="middle" fill="white" font-size="11" font-family="sans-serif">${new Date().toLocaleString('id-ID')}</text><text x="200" y="195" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" font-family="sans-serif">Pondok Pesantren Darussalam</text></svg>`)}`;
-    setPhotos(prev => [...prev, newPhoto]);
-  };
+  const capturePhoto = useCallback(() => {
+    if (photos.length >= 3 || !webcamRef.current) return;
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (imageSrc) {
+      // Apply watermark using canvas
+      const img = new Image();
+      img.src = imageSrc;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          
+          // Add watermark background
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+          ctx.fillRect(0, img.height - 60, img.width, 60);
+
+          // Add text
+          ctx.fillStyle = 'white';
+          ctx.font = '16px sans-serif';
+          ctx.fillText(`Foto Bukti KBM ${photos.length + 1}`, 10, img.height - 40);
+          
+          ctx.font = '12px sans-serif';
+          ctx.fillText(`${new Date().toLocaleString('id-ID')}`, 10, img.height - 20);
+          
+          ctx.font = '10px sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillText('Pondok Pesantren Darussalam', 10, img.height - 5);
+
+          const watermarkedSrc = canvas.toDataURL('image/jpeg', 0.8);
+          setPhotos(prev => [...prev, watermarkedSrc]);
+          setIsCameraOpen(false);
+        }
+      };
+    }
+  }, [photos.length]);
 
   const removePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
@@ -94,7 +126,7 @@ function JournalContent() {
   };
 
   const canProceedStep2 = attendance.length > 0;
-  const canProceedStep3 = material.trim().length > 0;
+  const canProceedStep3 = material.trim().length >= 10;
   const canProceedStep4 = photos.length >= 1;
 
   const steps = ['Absensi', 'Materi', 'Foto', 'Review'];
@@ -220,12 +252,21 @@ function JournalContent() {
                         <span className="text-xs text-gray-400 font-mono w-5">{i + 1}</span>
                         <span className="text-sm text-gray-800">{student.name}</span>
                       </div>
-                      <button
-                        onClick={() => toggleStatus(student.id)}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs transition-all ${statusColors[status].bg}`}
-                      >
-                        {status}
-                      </button>
+                      <div className="flex gap-1">
+                        {(['H', 'S', 'I', 'A'] as AttendanceStatus[]).map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setStudentStatus(student.id, s)}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
+                              status === s
+                                ? statusColors[s].bg
+                                : 'bg-white border border-gray-200 text-gray-400 hover:border-gray-300'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -263,45 +304,83 @@ function JournalContent() {
               exit={{ opacity: 0, x: -20 }}
               className="p-4 space-y-4"
             >
-              <div>
-                <h2 className="text-base font-semibold text-gray-900">Bukti Foto KBM</h2>
-                <p className="text-sm text-gray-500">Ambil foto suasana kelas (min. 1, maks. 3 foto).</p>
-              </div>
-
-              {/* Photo Grid */}
-              <div className="grid grid-cols-3 gap-3">
-                {photos.map((photo, i) => (
-                  <div key={i} className="relative aspect-4/3 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+              {isCameraOpen ? (
+                <div className="fixed inset-0 z-100 bg-black flex flex-col">
+                  <div className="flex-1 relative flex items-center justify-center">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      videoConstraints={{ facingMode }}
+                      className="w-full h-full object-cover"
+                    />
                     <button
-                      onClick={() => removePhoto(i)}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center"
+                      onClick={() => setFacingMode(prev => prev === "environment" ? "user" : "environment")}
+                      className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <SwitchCamera className="w-6 h-6 text-white" />
                     </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/50 p-1">
-                      <span className="text-[9px] text-white">Foto {i + 1}</span>
+                    <button
+                      onClick={() => setIsCameraOpen(false)}
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
+                    >
+                      <X className="w-6 h-6 text-white" />
+                    </button>
+                    
+                    {/* Capture Button */}
+                    <div className="absolute bottom-24 left-0 right-0 flex justify-center">
+                      <button
+                        onClick={capturePhoto}
+                        className="w-16 h-16 rounded-full border-4 border-white bg-white/20 flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white"></div>
+                      </button>
                     </div>
                   </div>
-                ))}
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Bukti Foto KBM</h2>
+                    <p className="text-sm text-gray-500">Ambil foto suasana kelas (min. 1, maks. 3 foto).</p>
+                  </div>
 
-                {photos.length < 3 && (
-                  <button
-                    onClick={simulatePhoto}
-                    className="aspect-4/3 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 hover:border-nabawi hover:bg-nabawi/5 transition-colors"
-                  >
-                    <Camera className="w-6 h-6 text-gray-400" />
-                    <span className="text-[10px] text-gray-400">Ambil Foto</span>
-                  </button>
-                )}
-              </div>
+                  {/* Photo Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {photos.map((photo, i) => (
+                      <div key={i} className="relative aspect-4/3 rounded-xl overflow-hidden border border-gray-200">
+                        <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removePhoto(i)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/50 p-1">
+                          <span className="text-[9px] text-white">Foto {i + 1}</span>
+                        </div>
+                      </div>
+                    ))}
 
-              <div className="flex items-center gap-2 p-3 bg-gold/10 rounded-xl">
-                <ImageIcon className="w-4 h-4 text-gold-dark" />
-                <p className="text-xs text-gold-dark">
-                  Foto akan diberi watermark otomatis (tanggal, waktu, lokasi, nama sekolah).
-                </p>
-              </div>
+                    {photos.length < 3 && (
+                      <button
+                        onClick={() => setIsCameraOpen(true)}
+                        className="aspect-4/3 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 hover:border-nabawi hover:bg-nabawi/5 transition-colors"
+                      >
+                        <Camera className="w-6 h-6 text-gray-400" />
+                        <span className="text-[10px] text-gray-400">Ambil Foto</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 p-3 bg-gold/10 rounded-xl">
+                    <ImageIcon className="w-4 h-4 text-gold-dark" />
+                    <p className="text-xs text-gold-dark">
+                      Foto akan diberi watermark otomatis (tanggal, waktu, lokasi, nama sekolah).
+                    </p>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 
