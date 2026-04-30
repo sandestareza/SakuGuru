@@ -1,26 +1,195 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* SakuGuru Custom Colors */
+  --color-nabawi: #1B4332;
+  --color-nabawi-light: #2D6A4F;
+  --color-nabawi-dark: #0F2A1D;
+  --color-gold: #D4AF37;
+  --color-gold-light: #E8CC6E;
+  --color-gold-dark: #B8941F;
+  --color-sand: #F8F9FA;
+  --color-sand-warm: #F5F0E8;
+  --color-terra: #C0392B;
+  --color-terra-light: #E74C3C;
+  --color-terra-muted: rgba(192, 57, 43, 0.15);
+  --color-success: #27AE60;
+  --color-success-light: rgba(39, 174, 96, 0.15);
+  --color-info: #2980B9;
+  --color-info-light: rgba(41, 128, 185, 0.15);
+  --color-warning: #F39C12;
+  --color-warning-light: rgba(243, 156, 18, 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===== SakuGuru Islamic Theme (Light) ===== */
+:root {
+  --background: #F8F9FA;
+  --foreground: #1A1A2E;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A2E;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A2E;
+  --primary: #1B4332;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F4F1;
+  --secondary-foreground: #1B4332;
+  --muted: #F0F4F1;
+  --muted-foreground: #6B7280;
+  --accent: #D4AF37;
+  --accent-foreground: #1A1A2E;
+  --destructive: #C0392B;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #1B4332;
+  --chart-1: #1B4332;
+  --chart-2: #D4AF37;
+  --chart-3: #2D6A4F;
+  --chart-4: #27AE60;
+  --chart-5: #2980B9;
+  --radius: 0.75rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A1A2E;
+  --sidebar-primary: #1B4332;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0F4F1;
+  --sidebar-accent-foreground: #1B4332;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #1B4332;
+}
+
+/* ===== Super Admin Dark Theme ===== */
+.dark {
+  --background: #0A0A0F;
+  --foreground: #F0F0F5;
+  --card: #12121A;
+  --card-foreground: #F0F0F5;
+  --popover: #12121A;
+  --popover-foreground: #F0F0F5;
+  --primary: #D4AF37;
+  --primary-foreground: #0A0A0F;
+  --secondary: #1E1E2E;
+  --secondary-foreground: #F0F0F5;
+  --muted: #1E1E2E;
+  --muted-foreground: #9CA3AF;
+  --accent: #1B4332;
+  --accent-foreground: #F0F0F5;
+  --destructive: #E74C3C;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #27AE60;
+  --chart-3: #2980B9;
+  --chart-4: #8E44AD;
+  --chart-5: #E74C3C;
+  --sidebar: #12121A;
+  --sidebar-foreground: #F0F0F5;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #0A0A0F;
+  --sidebar-accent: #1E1E2E;
+  --sidebar-accent-foreground: #F0F0F5;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #D4AF37;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans scroll-smooth;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ===== Islamic Geometric Pattern (Watermark) ===== */
+.islamic-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30Z' fill='none' stroke='%231B4332' stroke-width='0.5' opacity='0.04'/%3E%3Cpath d='M30 10L50 30L30 50L10 30Z' fill='none' stroke='%231B4332' stroke-width='0.3' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ===== Pulse animation for active schedule ===== */
+@keyframes pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(27, 67, 50, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(27, 67, 50, 0); }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* ===== Mobile PWA overrides ===== */
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+/* ===== Custom scrollbar ===== */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* ===== Bottom Nav safe area ===== */
+.pb-bottom-nav {
+  padding-bottom: 5rem;
 }
