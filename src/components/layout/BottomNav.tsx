@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, BookOpen, Calendar, User } from 'lucide-react';
+import { Home, BookOpen, Calendar, User, BoxIcon, Menu } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -66,7 +66,7 @@ export const teacherNavItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: <Home className="w-5 h-5" /> },
-  { href: '/admin/master', label: 'Master', icon: <BookOpen className="w-5 h-5" /> },
+  { href: '/admin/master', label: 'Master', icon: <BoxIcon className="w-5 h-5" /> },
   { href: '/admin/schedules', label: 'Jadwal', icon: <Calendar className="w-5 h-5" /> },
-  { href: '/admin/more', label: 'Lainnya', icon: <User className="w-5 h-5" /> },
+  { href: '/admin/more', label: 'Lainnya', icon: <Menu className="w-5 h-5" /> },
 ];
