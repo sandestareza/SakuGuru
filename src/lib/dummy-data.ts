@@ -112,8 +112,13 @@ export const dummySchedules: Schedule[] = [
 ];
 
 // ===== JOURNALS =====
+// ===== JOURNALS =====
 const today = new Date().toISOString().split('T')[0];
+const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+const dayBefore = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+
 export const dummyJournals: JournalEntry[] = [
+  // Today's Entries
   {
     id: 'j1', scheduleId: 'sch1', teacherId: 't1', classId: 'c1', subjectId: 'sub1',
     date: today, status: 'completed',
@@ -132,6 +137,32 @@ export const dummyJournals: JournalEntry[] = [
   {
     id: 'j3', scheduleId: 'sch3', teacherId: 't1', classId: 'c4', subjectId: 'sub1',
     date: today, status: 'locked',
+  },
+  // Yesterday's Entries (History)
+  {
+    id: 'j-hist1', scheduleId: 'sch4', teacherId: 't1', classId: 'c3', subjectId: 'sub1',
+    date: yesterday, status: 'completed',
+    material: 'Logaritma: Sifat-sifat logaritma dan aplikasinya dalam soal cerita.',
+    photos: ['/placeholder-photo-2.jpg'],
+    attendance: dummyStudents.filter(s => s.classId === 'c3').map((s, i) => ({ studentId: s.id, status: i === 2 ? 'S' : 'H' })),
+    submittedAt: `${yesterday}T07:50:00`,
+  },
+  {
+    id: 'j-hist2', scheduleId: 'sch5', teacherId: 't1', classId: 'c5', subjectId: 'sub1',
+    date: yesterday, status: 'completed',
+    material: 'Eksponen: Grafik fungsi eksponen dan pertidaksamaan eksponen.',
+    photos: ['/placeholder-photo-1.jpg'],
+    attendance: dummyStudents.filter(s => s.classId === 'c5').map((s, i) => ({ studentId: s.id, status: i === 1 ? 'A' : 'H' })),
+    submittedAt: `${yesterday}T11:45:00`,
+  },
+  // Day Before Yesterday
+  {
+    id: 'j-hist3', scheduleId: 'sch6', teacherId: 't1', classId: 'c7', subjectId: 'sub1',
+    date: dayBefore, status: 'completed',
+    material: 'Limit Fungsi Aljabar: Menghitung limit fungsi di satu titik dan tak hingga.',
+    photos: ['/placeholder-photo-2.jpg'],
+    attendance: dummyStudents.filter(s => s.classId === 'c7').map((s, i) => ({ studentId: s.id, status: 'H' })),
+    submittedAt: `${dayBefore}T08:30:00`,
   },
 ];
 
