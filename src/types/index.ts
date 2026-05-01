@@ -15,6 +15,7 @@ export interface User {
 export interface School {
   id: string;
   name: string;
+  npsn?: string;
   address: string;
   logo?: string;
   status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';

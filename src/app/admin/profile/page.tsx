@@ -12,8 +12,16 @@ import { toast } from 'sonner';
 
 export default function AdminProfilePage() {
   const router = useRouter();
-  const { state, logout } = useApp();
+  const { state, dispatch, logout } = useApp();
   const currentUser = state.currentUser;
+  const currentSchool = currentUser?.schoolId ? state.schools.find(s => s.id === currentUser.schoolId) : null;
+
+  const [isEditingSchool, setIsEditingSchool] = useState(false);
+  const [schoolForm, setSchoolForm] = useState({
+    name: currentSchool?.name || '',
+    npsn: currentSchool?.npsn || '10123456',
+    address: currentSchool?.address || '',
+  });
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -34,6 +42,23 @@ export default function AdminProfilePage() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleSaveSchool = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentSchool) {
+      dispatch({
+        type: 'UPDATE_SCHOOL',
+        payload: {
+          ...currentSchool,
+          name: schoolForm.name,
+          npsn: schoolForm.npsn,
+          address: schoolForm.address,
+        }
+      });
+      toast.success('Informasi sekolah berhasil diperbarui');
+      setIsEditingSchool(false);
+    }
   };
 
   const handleLogout = () => {
@@ -68,24 +93,78 @@ export default function AdminProfilePage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3"
+        className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
       >
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-900">Informasi Sekolah</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-900">Informasi Sekolah</h2>
+          </div>
+          {currentSchool && (
+            <button 
+              onClick={() => {
+                if (!isEditingSchool) {
+                  setSchoolForm({
+                    name: currentSchool.name || '',
+                    npsn: currentSchool.npsn || '10123456',
+                    address: currentSchool.address || '',
+                  });
+                }
+                setIsEditingSchool(!isEditingSchool);
+              }}
+              className="text-xs text-nabawi font-medium hover:underline"
+            >
+              {isEditingSchool ? 'Batal' : 'Edit'}
+            </button>
+          )}
         </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Nama Sekolah</p>
-          <p className="text-sm font-medium text-gray-900">Pondok Pesantren Darussalam</p>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">NPSN</p>
-          <p className="text-sm font-medium text-gray-900">10123456</p>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Alamat</p>
-          <p className="text-sm font-medium text-gray-900">Jl. Kyai Haji Hasyim Ashari No. 1</p>
-        </div>
+
+        {isEditingSchool && currentSchool ? (
+          <form onSubmit={handleSaveSchool} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-600">Nama Sekolah</Label>
+              <Input 
+                value={schoolForm.name}
+                onChange={e => setSchoolForm({...schoolForm, name: e.target.value})}
+                className="h-10 text-sm rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-600">NPSN</Label>
+              <Input 
+                value={schoolForm.npsn}
+                onChange={e => setSchoolForm({...schoolForm, npsn: e.target.value})}
+                className="h-10 text-sm rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-600">Alamat Lengkap</Label>
+              <Input 
+                value={schoolForm.address}
+                onChange={e => setSchoolForm({...schoolForm, address: e.target.value})}
+                className="h-10 text-sm rounded-xl"
+              />
+            </div>
+            <Button type="submit" className="w-full h-10 mt-2 text-sm font-semibold rounded-xl bg-nabawi hover:bg-nabawi-dark">
+              Simpan Perubahan
+            </Button>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">Nama Sekolah</p>
+              <p className="text-sm font-medium text-gray-900">{currentSchool?.name || 'Belum diatur'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">NPSN</p>
+              <p className="text-sm font-medium text-gray-900">{currentSchool?.npsn || '10123456'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">Alamat Lengkap</p>
+              <p className="text-sm font-medium text-gray-900">{currentSchool?.address || 'Belum diatur'}</p>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Security */}

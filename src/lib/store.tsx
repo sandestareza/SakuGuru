@@ -52,6 +52,7 @@ type Action =
   | { type: 'ADD_CALENDAR_EVENT'; payload: CalendarEvent }
   | { type: 'UPDATE_CALENDAR_EVENT'; payload: CalendarEvent }
   | { type: 'DELETE_CALENDAR_EVENT'; payload: string }
+  | { type: 'UPDATE_SCHOOL'; payload: School }
   | { type: 'LOAD_STATE'; payload: AppState };
 
 const initialState: AppState = {
@@ -125,6 +126,9 @@ function appReducer(state: AppState, action: Action): AppState {
       return { ...state, calendarEvents: state.calendarEvents.map(e => e.id === action.payload.id ? action.payload : e) };
     case 'DELETE_CALENDAR_EVENT':
       return { ...state, calendarEvents: state.calendarEvents.filter(e => e.id !== action.payload) };
+    // Schools
+    case 'UPDATE_SCHOOL':
+      return { ...state, schools: state.schools.map(s => s.id === action.payload.id ? action.payload : s) };
     default:
       return state;
   }
