@@ -27,7 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-sand">
-      <main className="pb-bottom-nav max-w-lg mx-auto">
+      <main className="pb-bottom-nav w-full lg:max-w-3/4 mx-auto">
         {children}
       </main>
       <BottomNav items={adminNavItems} />
