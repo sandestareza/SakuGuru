@@ -23,6 +23,8 @@ export interface School {
   maxTeachers: number;
   dueDate: string;
   createdAt: string;
+  /** Durasi 1 JP (Jam Pelajaran) dalam menit. Default 45 menit. */
+  lessonDurationMinutes?: number;
 }
 
 export interface Teacher {

@@ -16,11 +16,11 @@ export const dummyUsers: User[] = [
 
 // ===== SCHOOLS (TENANTS) =====
 export const dummySchools: School[] = [
-  { id: 's1', name: 'Pondok Pesantren Darussalam', address: 'Jl. Pondok Pesantren No. 1, Bogor', status: 'ACTIVE', maxStudents: 500, maxTeachers: 30, dueDate: '2026-06-30', createdAt: '2025-01-15' },
-  { id: 's2', name: 'SMA Islam Al-Azhar', address: 'Jl. Sisingamangaraja No. 12, Jakarta', status: 'ACTIVE', maxStudents: 800, maxTeachers: 50, dueDate: '2026-07-15', createdAt: '2025-02-01' },
-  { id: 's3', name: 'MTs Nurul Iman', address: 'Jl. Raya Cipanas No. 5, Cianjur', status: 'TRIAL', maxStudents: 200, maxTeachers: 15, dueDate: '2026-05-15', createdAt: '2026-03-01' },
-  { id: 's4', name: 'MA Darul Hikam', address: 'Jl. Ir. H. Juanda No. 285, Bandung', status: 'ACTIVE', maxStudents: 600, maxTeachers: 40, dueDate: '2026-08-01', createdAt: '2025-06-01' },
-  { id: 's5', name: 'Pesantren Modern Al-Kautsar', address: 'Jl. Way Halim, Bandar Lampung', status: 'SUSPENDED', maxStudents: 300, maxTeachers: 20, dueDate: '2026-03-01', createdAt: '2025-03-15' },
+  { id: 's1', name: 'Pondok Pesantren Darussalam', address: 'Jl. Pondok Pesantren No. 1, Bogor', status: 'ACTIVE', maxStudents: 500, maxTeachers: 30, dueDate: '2026-06-30', createdAt: '2025-01-15', lessonDurationMinutes: 45 },
+  { id: 's2', name: 'SMA Islam Al-Azhar', address: 'Jl. Sisingamangaraja No. 12, Jakarta', status: 'ACTIVE', maxStudents: 800, maxTeachers: 50, dueDate: '2026-07-15', createdAt: '2025-02-01', lessonDurationMinutes: 45 },
+  { id: 's3', name: 'MTs Nurul Iman', address: 'Jl. Raya Cipanas No. 5, Cianjur', status: 'TRIAL', maxStudents: 200, maxTeachers: 15, dueDate: '2026-05-15', createdAt: '2026-03-01', lessonDurationMinutes: 30 },
+  { id: 's4', name: 'MA Darul Hikam', address: 'Jl. Ir. H. Juanda No. 285, Bandung', status: 'ACTIVE', maxStudents: 600, maxTeachers: 40, dueDate: '2026-08-01', createdAt: '2025-06-01', lessonDurationMinutes: 40 },
+  { id: 's5', name: 'Pesantren Modern Al-Kautsar', address: 'Jl. Way Halim, Bandar Lampung', status: 'SUSPENDED', maxStudents: 300, maxTeachers: 20, dueDate: '2026-03-01', createdAt: '2025-03-15', lessonDurationMinutes: 45 },
 ];
 
 // ===== TEACHERS =====

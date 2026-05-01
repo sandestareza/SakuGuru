@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '@/lib/store';
-import { AlertTriangle, Clock, GraduationCap, Plus, Edit, Trash2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Clock, GraduationCap, Plus, Edit, Trash2, ClipboardList, Settings2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -15,12 +15,17 @@ import type { DayOfWeek, Schedule } from '@/types';
 
 const days: DayOfWeek[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
+/** Preset durasi JP yang umum digunakan sekolah */
+const JP_PRESETS = [30, 35, 40, 45] as const;
+
 export default function SchedulesPage() {
   const { state, dispatch } = useApp();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isRekapOpen, setIsRekapOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  const [showJpConfig, setShowJpConfig] = useState(false);
+  const [customJpInput, setCustomJpInput] = useState('');
   const [scheduleForm, setScheduleForm] = useState<Partial<Schedule>>({
     dayOfWeek: 'Senin',
     startTime: '07:00',
@@ -29,6 +34,29 @@ export default function SchedulesPage() {
     subjectId: '',
     teacherId: ''
   });
+
+  // Get current school & JP duration
+  const currentSchool = useMemo(() => {
+    const schoolId = state.currentUser?.schoolId;
+    return state.schools.find(s => s.id === schoolId) || state.schools[0];
+  }, [state.schools, state.currentUser]);
+
+  const jpDuration = currentSchool?.lessonDurationMinutes || 45;
+
+  const handleSetJpDuration = (minutes: number) => {
+    if (minutes < 10 || minutes > 120) {
+      toast.error('Durasi JP harus antara 10-120 menit');
+      return;
+    }
+    if (!currentSchool) return;
+    dispatch({
+      type: 'UPDATE_SCHOOL',
+      payload: { ...currentSchool, lessonDurationMinutes: minutes }
+    });
+    toast.success(`Durasi 1 JP diatur ke ${minutes} menit`);
+    setCustomJpInput('');
+    setShowJpConfig(false);
+  };
 
   // Rekap Jam Mengajar
   const teachingHours = useMemo(() => {
@@ -57,13 +85,18 @@ export default function SchedulesPage() {
 
     return Array.from(rekapMap.entries()).map(([teacherId, data]) => {
       const teacher = state.teachers.find(t => t.id === teacherId);
+
+      const totalJp = data.totalMinutes / jpDuration;
       
       const classBreakdown = Array.from(data.classes.entries()).map(([classId, minutes]) => {
         const cls = state.classes.find(c => c.id === classId);
+        const classJp = minutes / jpDuration;
         return {
           classId,
           className: cls?.name || 'Kelas Tidak Diketahui',
           minutes,
+          jp: classJp,
+          formattedJp: Number.isInteger(classJp) ? `${classJp} JP` : `${classJp.toFixed(1)} JP`,
           formatted: `${Math.floor(minutes / 60)}j ${minutes % 60}m`
         };
       }).sort((a, b) => b.minutes - a.minutes);
@@ -72,11 +105,13 @@ export default function SchedulesPage() {
         teacherId,
         teacherName: teacher?.name || 'Guru Tidak Diketahui',
         totalMinutes: data.totalMinutes,
+        totalJp,
+        formattedJp: Number.isInteger(totalJp) ? `${totalJp} JP` : `${totalJp.toFixed(1)} JP`,
         formattedTotal: `${Math.floor(data.totalMinutes / 60)}j ${data.totalMinutes % 60}m`,
         classBreakdown
       };
     }).sort((a, b) => b.totalMinutes - a.totalMinutes);
-  }, [state.schedules, state.teachers, state.classes]);
+  }, [state.schedules, state.teachers, state.classes, jpDuration]);
 
   // Dynamic Time Slots based on state schedules
   const dynamicTimeSlots = useMemo(() => {
@@ -124,7 +159,51 @@ export default function SchedulesPage() {
       toast.error('Semua kolom wajib diisi');
       return;
     }
-    
+
+    // Validate: endTime must be after startTime
+    const getMinutesVal = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+    if (getMinutesVal(scheduleForm.endTime!) <= getMinutesVal(scheduleForm.startTime!)) {
+      toast.error('Jam selesai harus lebih besar dari jam mulai');
+      return;
+    }
+
+    // Check for time overlap helper
+    const isOverlap = (startA: string, endA: string, startB: string, endB: string) => {
+      const a0 = getMinutesVal(startA), a1 = getMinutesVal(endA);
+      const b0 = getMinutesVal(startB), b1 = getMinutesVal(endB);
+      return a0 < b1 && b0 < a1;
+    };
+
+    // Get existing schedules for the same day, excluding the schedule being edited
+    const sameDaySchedules = state.schedules.filter(
+      s => s.dayOfWeek === scheduleForm.dayOfWeek && (editingSchedule ? s.id !== editingSchedule.id : true)
+    );
+
+    // Check teacher conflict: same teacher at overlapping time
+    const teacherConflict = sameDaySchedules.find(
+      s => s.teacherId === scheduleForm.teacherId && isOverlap(s.startTime, s.endTime, scheduleForm.startTime!, scheduleForm.endTime!)
+    );
+    if (teacherConflict) {
+      const teacher = state.teachers.find(t => t.id === scheduleForm.teacherId);
+      const conflictClass = state.classes.find(c => c.id === teacherConflict.classId);
+      toast.error(`Bentrok! ${teacher?.name || 'Guru'} sudah mengajar di ${conflictClass?.name || 'kelas lain'} pada ${teacherConflict.startTime}–${teacherConflict.endTime}`);
+      return;
+    }
+
+    // Check class conflict: same class at overlapping time
+    const classConflict = sameDaySchedules.find(
+      s => s.classId === scheduleForm.classId && isOverlap(s.startTime, s.endTime, scheduleForm.startTime!, scheduleForm.endTime!)
+    );
+    if (classConflict) {
+      const cls = state.classes.find(c => c.id === scheduleForm.classId);
+      const conflictSubject = state.subjects.find(sub => sub.id === classConflict.subjectId);
+      toast.error(`Bentrok! ${cls?.name || 'Kelas'} sudah ada jadwal ${conflictSubject?.name || 'mapel lain'} pada ${classConflict.startTime}–${classConflict.endTime}`);
+      return;
+    }
+
     if (editingSchedule) {
       dispatch({ type: 'UPDATE_SCHEDULE', payload: { ...editingSchedule, ...scheduleForm } as Schedule });
       toast.success('Jadwal berhasil diperbarui');
@@ -209,7 +288,7 @@ export default function SchedulesPage() {
             <AlertTriangle className="w-5 h-5 text-terra shrink-0 mt-0.5" />
             <div>
               <h3 className="text-sm font-bold text-terra">Terdeteksi Jadwal Bentrok!</h3>
-              <ul className="text-xs text-terra-muted mt-1 space-y-1">
+              <ul className="text-xs text-terra/50 mt-1 space-y-1">
                 {conflicts.map((c, i) => {
                   const teacher = state.teachers.find(t => t.id === c.teacherId);
                   return (
@@ -277,7 +356,7 @@ export default function SchedulesPage() {
                                     <span className={isConflict ? 'text-terra' : 'text-nabawi-dark'}>{subject?.name}</span>
                                     <span className="bg-white/50 px-1 rounded text-gray-600">{cls?.name}</span>
                                   </div>
-                                  <div className={`flex items-center gap-1 ${isConflict ? 'text-terra-muted' : 'text-gray-500'}`}>
+                                  <div className={`flex items-center gap-1 ${isConflict ? 'text-terra/50' : 'text-gray-500'}`}>
                                     <GraduationCap className="w-3 h-3" />
                                     <span className="truncate w-full">{state.teachers.find(t => t.id === schedule.teacherId)?.name}</span>
                                   </div>
@@ -399,6 +478,99 @@ export default function SchedulesPage() {
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
+            {/* JP Configuration Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+            >
+              <button
+                onClick={() => setShowJpConfig(!showJpConfig)}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+                    <Settings2 className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-bold text-gray-900 text-sm">Konfigurasi Durasi JP</h4>
+                    <p className="text-xs text-gray-500">1 JP = <span className="font-bold text-amber-600">{jpDuration} menit</span></p>
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ rotate: showJpConfig ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </motion.div>
+              </button>
+
+              {/* Expandable Config Panel */}
+              {showJpConfig && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="border-t border-gray-100 p-4 space-y-3 bg-gray-50/50"
+                >
+                  <p className="text-xs text-gray-500">
+                    Pilih durasi 1 JP sesuai ketentuan sekolah:
+                  </p>
+
+                  {/* Preset Buttons */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {JP_PRESETS.map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => handleSetJpDuration(preset)}
+                        className={`py-2.5 px-3 rounded-xl text-sm font-bold transition-all ${
+                          jpDuration === preset
+                            ? 'bg-nabawi text-white shadow-md scale-105'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:border-nabawi/40 hover:bg-nabawi/5'
+                        }`}
+                      >
+                        {preset}m
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Input */}
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Menit lainnya..."
+                      min={10}
+                      max={120}
+                      value={customJpInput}
+                      onChange={e => setCustomJpInput(e.target.value)}
+                      className="rounded-xl text-sm flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!customJpInput}
+                      onClick={() => {
+                        const val = parseInt(customJpInput);
+                        if (!isNaN(val)) handleSetJpDuration(val);
+                      }}
+                      className="rounded-xl px-4 border-nabawi/30 text-nabawi hover:bg-nabawi/10"
+                    >
+                      Atur
+                    </Button>
+                  </div>
+
+                  <p className="text-[10px] text-gray-400 leading-relaxed">
+                    Pengaturan ini berlaku untuk seluruh perhitungan rekap jam mengajar di sekolah Anda. 
+                    Umum: SD/MI = 30–35 menit, SMP/MTs = 40 menit, SMA/MA = 45 menit.
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Teacher Rekap Cards */}
             {teachingHours.length === 0 ? (
               <div className="text-center py-10 text-gray-400">
                 <p className="text-sm">Belum ada data jadwal untuk direkap.</p>
@@ -423,8 +595,8 @@ export default function SchedulesPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-nabawi-dark">{rekap.formattedTotal}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Total Jam</div>
+                      <div className="text-lg font-bold text-nabawi-dark">{rekap.formattedJp}</div>
+                      <div className="text-[10px] text-gray-400 font-medium">{rekap.formattedTotal}</div>
                     </div>
                   </div>
                   
@@ -433,7 +605,10 @@ export default function SchedulesPage() {
                     {rekap.classBreakdown.map(cb => (
                       <div key={cb.classId} className="flex justify-between items-center text-sm px-2 py-1.5 bg-white rounded-lg border border-gray-100">
                         <span className="text-gray-700 font-medium">{cb.className}</span>
-                        <span className="text-gray-600 font-mono text-xs">{cb.formatted}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-nabawi-dark font-bold text-xs">{cb.formattedJp}</span>
+                          <span className="text-gray-400 font-mono text-[10px]">({cb.formatted})</span>
+                        </div>
                       </div>
                     ))}
                   </div>
