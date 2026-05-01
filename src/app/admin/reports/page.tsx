@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   CalendarDays,
   GraduationCap,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -42,28 +43,51 @@ export default function ReportsPage() {
   const reportTypes = [
     {
       id: "jadwal",
-      title: "Cetak Jadwal Kelas",
-      desc: "Jadwal pelajaran per kelas format formal",
+      title: "Jadwal Kelas",
+      desc: "Jadwal pelajaran format formal per kelas",
       icon: "calendar",
+      color: "blue",
     },
     {
       id: "jadwal_guru",
-      title: "Cetak Jadwal Guru",
-      desc: "Jadwal mengajar per guru format formal",
+      title: "Jadwal Guru",
+      desc: "Jadwal mengajar format formal per guru",
       icon: "graduation",
+      color: "green",
     },
     {
       id: "absensi",
       title: "Rekap Absensi",
-      desc: "Kehadiran siswa per kelas",
+      desc: "Laporan kehadiran siswa per kelas",
+      icon: "file",
+      color: "terra",
     },
-    { id: "nilai", title: "Rekap Nilai", desc: "Nilai Harian, UTS, UAS, NA" },
+    { 
+      id: "nilai", 
+      title: "Rekap Nilai", 
+      desc: "Laporan nilai harian, UTS, & UAS",
+      icon: "file",
+      color: "amber",
+    },
     {
       id: "jurnal",
       title: "Jurnal KBM",
       desc: "Laporan materi & foto bukti mengajar",
+      icon: "file",
+      color: "purple",
     },
   ];
+
+  const getColorClasses = (color: string, active: boolean) => {
+    switch (color) {
+      case 'blue': return active ? 'bg-blue-600 border-blue-600 shadow-blue-200' : 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'green': return active ? 'bg-emerald-600 border-emerald-600 shadow-emerald-200' : 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'terra': return active ? 'bg-terra border-terra shadow-terra/20' : 'bg-terra/5 text-terra border-terra/10';
+      case 'amber': return active ? 'bg-amber-600 border-amber-600 shadow-amber-200' : 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'purple': return active ? 'bg-purple-600 border-purple-600 shadow-purple-200' : 'bg-purple-50 text-purple-600 border-purple-100';
+      default: return active ? 'bg-nabawi border-nabawi shadow-nabawi/20' : 'bg-gray-50 text-gray-600 border-gray-100';
+    }
+  };
 
   const handleExport = (type: "pdf" | "excel") => {
     toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
@@ -720,34 +744,39 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-sand flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-nabawi/5 rounded-full -mr-32 -mt-32 blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-terra/5 rounded-full -ml-48 -mb-48 blur-3xl" />
+      
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 py-3 shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-4 py-4 shrink-0 shadow-sm">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => (step > 1 ? setStep((s) => s - 1) : router.back())}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors shadow-sm border border-gray-100"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-sm font-semibold text-gray-900">
+            <h1 className="text-base font-bold text-gray-900 tracking-tight">
               Pusat Laporan
             </h1>
-            <p className="text-xs text-gray-500">Cetak & Export Data</p>
+            <p className="text-[11px] text-gray-500 font-medium">Generate, Cetak, & Export Data Sekolah</p>
           </div>
         </div>
 
         {/* Step indicator */}
-        <div className="flex gap-1.5 mt-3">
-          {["Pilih", "Filter", "Preview"].map((s, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+        <div className="flex gap-2 mt-4">
+          {["Pilih Laporan", "Konfigurasi Filter", "Preview & Export"].map((s, i) => (
+            <div key={i} className="flex-1 flex flex-col gap-1.5">
               <div
-                className={`h-1 w-full rounded-full transition-all duration-300 ${
-                  i + 1 <= step ? "bg-nabawi" : "bg-gray-200"
+                className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                  i + 1 <= step ? "bg-nabawi shadow-[0_0_8px_rgba(45,90,61,0.3)]" : "bg-gray-100"
                 }`}
               />
               <span
-                className={`text-[9px] ${i + 1 <= step ? "text-nabawi font-medium" : "text-gray-400"}`}
+                className={`text-[9px] font-bold uppercase tracking-wider ${i + 1 <= step ? "text-nabawi" : "text-gray-400"}`}
               >
                 {s}
               </span>
@@ -763,50 +792,69 @@ export default function ReportsPage() {
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-3 pb-4"
             >
-              <h2 className="text-sm font-semibold text-gray-800 mb-2">
-                Pilih Jenis Laporan
-              </h2>
-              {reportTypes.map((type) => (
-                <div
-                  key={type.id}
-                  onClick={() => setReportType(type.id)}
-                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${
-                    reportType === type.id
-                      ? "border-nabawi bg-nabawi/5"
-                      : "border-gray-100 bg-white hover:border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        reportType === type.id
-                          ? "bg-nabawi text-white"
-                          : "bg-gray-100 text-gray-500"
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+                <h2 className="text-sm font-bold text-gray-800 uppercase tracking-tight">
+                  Pilih Jenis Laporan
+                </h2>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                {reportTypes.map((type) => {
+                  const isActive = reportType === type.id;
+                  const colorClass = getColorClasses(type.color, isActive);
+                  
+                  return (
+                    <motion.div
+                      key={type.id}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setReportType(type.id)}
+                      className={`relative group p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between overflow-hidden ${
+                        isActive
+                          ? "border-nabawi bg-white shadow-xl shadow-nabawi/5"
+                          : "border-white bg-white/60 hover:bg-white hover:border-gray-200 shadow-sm"
                       }`}
                     >
-                      {type.icon === 'calendar' ? <CalendarDays className="w-5 h-5" /> : type.icon === 'graduation' ? <GraduationCap className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <h3
-                        className={`font-semibold text-sm ${reportType === type.id ? "text-nabawi-dark" : "text-gray-900"}`}
-                      >
-                        {type.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {type.desc}
-                      </p>
-                    </div>
-                  </div>
-                  {reportType === type.id && (
-                    <CheckCircle2 className="w-5 h-5 text-nabawi" />
-                  )}
-                </div>
-              ))}
+                      {/* Selection Indicator Background */}
+                      {isActive && <div className="absolute top-0 right-0 w-32 h-32 bg-nabawi/5 rounded-full -mr-16 -mt-16" />}
+                      
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${colorClass} ${isActive ? 'shadow-lg' : ''}`}
+                        >
+                          {type.icon === 'calendar' ? <CalendarDays className="w-6 h-6" /> : type.icon === 'graduation' ? <GraduationCap className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+                        </div>
+                        <div>
+                          <h3
+                            className={`font-bold text-[15px] ${isActive ? "text-nabawi-dark" : "text-gray-900"}`}
+                          >
+                            {type.title}
+                          </h3>
+                          <p className="text-xs text-gray-500 font-medium">
+                            {type.desc}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="relative z-10">
+                        {isActive ? (
+                          <div className="w-6 h-6 rounded-full bg-nabawi flex items-center justify-center shadow-md">
+                            <CheckCircle2 className="w-4 h-4 text-white" />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border-2 border-gray-100 group-hover:border-gray-300 transition-colors" />
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </motion.div>
           )}
 
@@ -814,79 +862,114 @@ export default function ReportsPage() {
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
               className="space-y-4"
             >
-              <h2 className="text-sm font-semibold text-gray-800 mb-2">
-                Filter Data
-              </h2>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+                <h2 className="text-sm font-bold text-gray-800 uppercase tracking-tight">
+                  Konfigurasi Filter
+                </h2>
+              </div>
 
-              <div className="space-y-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                {/* Guru filter — only for jadwal_guru */}
-                {reportType === 'jadwal_guru' && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Guru</label>
-                    <select
-                      value={selectedTeacher}
-                      onChange={(e) => setSelectedTeacher(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                    >
-                      <option value="all">Semua Guru</option>
-                      {state.teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+              <div className="space-y-4 bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-white shadow-xl shadow-gray-200/50">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-2">Parameter Laporan</p>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Guru filter — only for jadwal_guru */}
+                  {reportType === 'jadwal_guru' && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-500 ml-1">PILIH GURU</label>
+                      <div className="relative">
+                        <select
+                          value={selectedTeacher}
+                          onChange={(e) => setSelectedTeacher(e.target.value)}
+                          className="w-full h-12 pl-4 pr-10 rounded-2xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-nabawi/20 focus:border-nabawi transition-all appearance-none shadow-sm font-medium"
+                        >
+                          <option value="all">Semua Guru Pengajar</option>
+                          {state.teachers.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                           <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Kelas filter — for jadwal, absensi, nilai, jurnal */}
-                {reportType !== 'jadwal_guru' && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Kelas</label>
-                    <select
-                      value={selectedClass}
-                      onChange={(e) => setSelectedClass(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                    >
-                      <option value="all">Semua Kelas</option>
-                      {state.classes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {/* Kelas filter — for jadwal, absensi, nilai, jurnal */}
+                  {reportType !== 'jadwal_guru' && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-500 ml-1">PILIH KELAS</label>
+                      <div className="relative">
+                        <select
+                          value={selectedClass}
+                          onChange={(e) => setSelectedClass(e.target.value)}
+                          className="w-full h-12 pl-4 pr-10 rounded-2xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-nabawi/20 focus:border-nabawi transition-all appearance-none shadow-sm font-medium"
+                        >
+                          <option value="all">Semua Kelas Terdaftar</option>
+                          {state.classes.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                           <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Mapel filter — for jadwal_guru, nilai, jurnal */}
-                {(reportType === 'jadwal_guru' || reportType === 'nilai' || reportType === 'jurnal') && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Mapel</label>
-                    <select
-                      value={selectedSubject}
-                      onChange={(e) => setSelectedSubject(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                    >
-                      <option value="all">Semua Mapel</option>
-                      {state.subjects.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {/* Mapel filter — for jadwal_guru, nilai, jurnal */}
+                  {(reportType === 'jadwal_guru' || reportType === 'nilai' || reportType === 'jurnal') && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-500 ml-1">MATA PELAJARAN</label>
+                      <div className="relative">
+                        <select
+                          value={selectedSubject}
+                          onChange={(e) => setSelectedSubject(e.target.value)}
+                          className="w-full h-12 pl-4 pr-10 rounded-2xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-nabawi/20 focus:border-nabawi transition-all appearance-none shadow-sm font-medium"
+                        >
+                          <option value="all">Semua Mata Pelajaran</option>
+                          {state.subjects.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                           <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Bulan filter — for absensi, nilai, jurnal */}
-                {(reportType === 'absensi' || reportType === 'nilai' || reportType === 'jurnal') && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Periode Bulan</label>
-                    <input
-                      type="month"
-                      value={month}
-                      onChange={(e) => setMonth(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                    />
+                  {/* Bulan filter — for absensi, nilai, jurnal */}
+                  {(reportType === 'absensi' || reportType === 'nilai' || reportType === 'jurnal') && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-500 ml-1">PERIODE BULAN</label>
+                      <div className="relative">
+                        <input
+                          type="month"
+                          value={month}
+                          onChange={(e) => setMonth(e.target.value)}
+                          className="w-full h-12 px-4 rounded-2xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-nabawi/20 focus:border-nabawi transition-all shadow-sm font-medium"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 p-3 bg-nabawi/5 rounded-2xl border border-nabawi/10">
+                  <div className="flex gap-2">
+                    <div className="w-5 h-5 rounded-full bg-nabawi text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <FileText className="w-3 h-3" />
+                    </div>
+                    <p className="text-[10px] text-nabawi-dark font-medium leading-relaxed">
+                      Pastikan filter sudah sesuai sebelum lanjut ke preview. Laporan akan di-generate berdasarkan data terbaru di sistem.
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -895,28 +978,55 @@ export default function ReportsPage() {
           {step === 3 && (
             <motion.div
               key="step3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="flex flex-col h-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="flex flex-col h-full space-y-4"
             >
-              <h2 className="text-sm font-semibold text-gray-800 mb-2 shrink-0">
-                Preview Data (Simulasi)
-              </h2>
-
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-                <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between shrink-0">
-                  <span className="text-xs font-semibold text-gray-700 uppercase">
-                    {reportTypes.find((t) => t.id === reportType)?.title}
-                  </span>
-                  <span className="text-[10px] text-gray-500 bg-white px-2 py-1 rounded border">
-                    {selectedClass === "all"
-                      ? "Semua Kelas"
-                      : state.classes.find((c) => c.id === selectedClass)?.name}
-                  </span>
+              <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-tight">
+                    Preview Laporan
+                  </h2>
                 </div>
-                <div className="flex-1 overflow-auto bg-white">
-                  {reportType === 'jadwal' ? renderJadwalPreview() : reportType === 'jadwal_guru' ? renderJadwalGuruPreview() : renderPreviewTable()}
+                <div className="text-[10px] font-bold text-nabawi bg-nabawi/10 px-2 py-1 rounded-full uppercase">
+                  Ready to Export
+                </div>
+              </div>
+
+              <div className="bg-white rounded-[2rem] border border-gray-200 shadow-2xl shadow-gray-200 overflow-hidden flex flex-col flex-1 min-h-0 relative">
+                {/* Paper Texture Overlay */}
+                <div className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-5" />
+                
+                <div className="p-4 bg-white border-b border-gray-100 flex items-center justify-between shrink-0 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-gray-900 leading-none mb-1">
+                        {reportTypes.find((t) => t.id === reportType)?.title}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        Dihasilkan pada {new Date().toLocaleDateString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Scope</span>
+                    <span className="text-[10px] font-bold text-nabawi-dark bg-nabawi/5 px-2 py-0.5 rounded-lg border border-nabawi/10">
+                      {selectedClass === "all"
+                        ? "Seluruh Sekolah"
+                        : state.classes.find((c) => c.id === selectedClass)?.name}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex-1 overflow-auto bg-gray-50/30 p-2 sm:p-4 relative z-10">
+                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-h-full">
+                     {reportType === 'jadwal' ? renderJadwalPreview() : reportType === 'jadwal_guru' ? renderJadwalGuruPreview() : renderPreviewTable()}
+                   </div>
                 </div>
               </div>
             </motion.div>
@@ -925,28 +1035,29 @@ export default function ReportsPage() {
       </div>
 
       {/* Bottom Actions */}
-      <div className="sticky bottom-20 z-10 p-4 bg-white border-t border-gray-100 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+      <div className="sticky bottom-0 z-20 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200/50 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-[2rem]">
         {step < 3 ? (
           <Button
-            className="w-full h-12 rounded-xl bg-nabawi hover:bg-nabawi-dark text-white font-semibold"
             disabled={step === 1 && !reportType}
             onClick={() => setStep((s) => s + 1)}
+            className="w-full h-14 rounded-2xl bg-nabawi hover:bg-nabawi-dark text-white font-bold text-base shadow-lg shadow-nabawi/20 active:scale-[0.98] transition-all"
           >
             Selanjutnya
           </Button>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={() => reportType === 'jadwal' ? handlePrintJadwalKelas() : reportType === 'jadwal_guru' ? handlePrintJadwalGuru() : handleExport("pdf")}
-              className="flex-1 h-12 rounded-xl bg-terra hover:bg-terra-muted text-white font-semibold"
+              className="flex-1 h-14 rounded-2xl bg-terra hover:bg-terra-muted text-white font-bold shadow-lg shadow-terra/20 active:scale-[0.98] transition-all"
             >
-              <Printer className="w-4 h-4 mr-2" /> PDF
+              <Printer className="w-5 h-5 mr-2" /> CETAK PDF
             </Button>
             <Button
               onClick={() => handleExport("excel")}
-              className="flex-1 h-12 rounded-xl bg-success hover:bg-success-dark text-white font-semibold"
+              variant="outline"
+              className="flex-1 h-14 rounded-2xl border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-bold active:scale-[0.98] transition-all"
             >
-              <Download className="w-4 h-4 mr-2" /> Excel
+              <Download className="w-5 h-5 mr-2" /> EXCEL
             </Button>
           </div>
         )}

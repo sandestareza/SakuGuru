@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, BookOpen, Calendar, User, BoxIcon, Menu } from 'lucide-react';
+import { Home, BookOpen, Calendar, User, BoxIcon, ClipboardList } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -19,40 +19,58 @@ export default function BottomNav({ items }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-100 safe-bottom">
-      <div className="max-w-lg mx-auto flex items-center justify-around h-16 px-2">
-        {items.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== '/teacher' && item.href !== '/admin' && pathname.startsWith(item.href));
-          
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative flex flex-col items-center justify-center gap-0.5 w-16 h-full"
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="bottomNavIndicator"
-                  className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-nabawi"
-                  transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
-                />
-              )}
-              <span className={`transition-colors duration-200 ${
-                isActive ? 'text-nabawi' : 'text-gray-400'
-              }`}>
-                {item.icon}
-              </span>
-              <span className={`text-[10px] font-medium transition-colors duration-200 ${
-                isActive ? 'text-nabawi' : 'text-gray-400'
-              }`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none">
+      <nav className="bg-white/80 backdrop-blur-xl border border-white shadow-[0_8px_32px_rgba(0,0,0,0.1)] rounded-[2.5rem] px-2 py-2 pointer-events-auto max-w-lg w-full">
+        <div className="flex items-center justify-around h-12">
+          {items.map((item) => {
+            const isActive = pathname === item.href || 
+              (item.href !== '/teacher' && item.href !== '/admin' && pathname.startsWith(item.href));
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-full group"
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="bottomNavIndicator"
+                    className="absolute inset-0 bg-nabawi/10 rounded-2xl"
+                    transition={{ type: 'spring', bounce: 0.3, duration: 0.6 }}
+                  />
+                )}
+                
+                <motion.span 
+                  animate={{ 
+                    scale: isActive ? 1.1 : 1,
+                    y: isActive ? -2 : 0 
+                  }}
+                  className={`relative z-10 transition-colors duration-300 ${
+                    isActive ? 'text-nabawi' : 'text-gray-400 group-hover:text-gray-600'
+                  }`}
+                >
+                  {item.icon}
+                </motion.span>
+                
+                <span className={`relative z-10 text-[9px] font-bold uppercase tracking-tighter transition-colors duration-300 ${
+                  isActive ? 'text-nabawi' : 'text-gray-400 group-hover:text-gray-500'
+                }`}>
+                  {item.label}
+                </span>
+
+                {isActive && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -bottom-1 w-1 h-1 rounded-full bg-nabawi shadow-[0_0_8px_rgba(45,90,61,0.5)]"
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 }
 
@@ -68,5 +86,5 @@ export const adminNavItems: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: <Home className="w-5 h-5" /> },
   { href: '/admin/master', label: 'Master', icon: <BoxIcon className="w-5 h-5" /> },
   { href: '/admin/schedules', label: 'Jadwal', icon: <Calendar className="w-5 h-5" /> },
-  { href: '/admin/more', label: 'Lainnya', icon: <Menu className="w-5 h-5" /> },
+  { href: '/admin/reports', label: 'Laporan', icon: <ClipboardList className="w-5 h-5" /> },
 ];

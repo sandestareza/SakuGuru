@@ -13,7 +13,7 @@ import type { UserRole } from '@/types';
 const roles: { value: UserRole; label: string; icon: React.ReactNode; desc: string }[] = [
   { value: 'guru', label: 'Guru / Ustadz', icon: <GraduationCap className="w-5 h-5" />, desc: 'Akses jurnal & absensi' },
   { value: 'admin', label: 'Admin Sekolah', icon: <UserCog className="w-5 h-5" />, desc: 'Kelola data & laporan' },
-  { value: 'superadmin', label: 'Super Admin', icon: <Shield className="w-5 h-5" />, desc: 'Kontrol platform SaaS' },
+//   { value: 'superadmin', label: 'Super Admin', icon: <Shield className="w-5 h-5" />, desc: 'Kontrol platform SaaS' },
 ];
 
 export default function LoginPage() {

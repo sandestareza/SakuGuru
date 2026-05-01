@@ -103,21 +103,23 @@ export default function TeacherHomePage() {
   };
 
   return (
-    <div className="p-4 space-y-5">
-      {/* Header */}
+    <div className="p-4 space-y-6 pb-24">
+      {/* Header - Premium Greeting */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="pt-2"
+        className="px-1 pt-2"
       >
-        <p className="text-sm text-gray-500">{getGreeting()},</p>
-        <h1 className="text-xl font-bold text-gray-900">{userName} 👋</h1>
-        <p className="text-xs text-gray-400 mt-1 capitalize">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+          <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">{getGreeting()}, {userName} 👋</h1>
+        </div>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">
           {format(today, "EEEE, d MMMM yyyy", { locale: localeId })}
         </p>
       </motion.div>
 
-      {/* Stats Summary */}
+      {/* Stats Summary - Premium Grid */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,33 +127,39 @@ export default function TeacherHomePage() {
         className="grid grid-cols-3 gap-3"
       >
         {[
-          { label: 'Total Kelas', value: todaySchedules.length, color: 'text-nabawi' },
-          { label: 'Selesai', value: todaySchedules.filter(s => s.status === 'completed').length, color: 'text-success' },
-          { label: 'Belum', value: todaySchedules.filter(s => s.status !== 'completed').length, color: 'text-gold-dark' },
+          { label: 'Total Kelas', value: todaySchedules.length, color: 'text-nabawi', bg: 'bg-nabawi/5' },
+          { label: 'Selesai', value: todaySchedules.filter(s => s.status === 'completed').length, color: 'text-success', bg: 'bg-success/5' },
+          { label: 'Belum', value: todaySchedules.filter(s => s.status !== 'completed').length, color: 'text-terra', bg: 'bg-terra/5' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100">
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{stat.label}</p>
+          <div key={i} className={`bg-white rounded-2xl p-4 text-center border-b-4 border-white shadow-xl shadow-gray-200/50 relative overflow-hidden group`}>
+            <div className={`absolute inset-0 ${stat.bg} opacity-50 group-hover:opacity-100 transition-opacity`} />
+            <p className={`text-2xl font-black ${stat.color} relative z-10 tracking-tighter`}>{stat.value}</p>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter relative z-10 mt-1">{stat.label}</p>
           </div>
         ))}
       </motion.div>
 
       {/* Schedule Cards */}
-      <div className="space-y-1">
-        <h2 className="text-sm font-semibold text-gray-700 px-1">Jadwal Hari Ini</h2>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Jadwal Hari Ini</h2>
+          <div className="h-px flex-1 bg-gray-100 ml-4" />
+        </div>
         
         {todaySchedules.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100"
+            className="bg-white rounded-[2rem] p-10 text-center border border-white shadow-2xl shadow-gray-200/50"
           >
-            <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Tidak ada jadwal hari ini</p>
-            <p className="text-xs text-gray-400 mt-1">Selamat beristirahat! 🌟</p>
+            <div className="w-16 h-16 bg-nabawi/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-nabawi" />
+            </div>
+            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Tidak Ada Jadwal</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Selamat Beristirahat! 🌟</p>
           </motion.div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {todaySchedules.map((item, index) => {
               const config = statusConfig[item.status];
               const isActive = item.status === 'active';
@@ -165,35 +173,53 @@ export default function TeacherHomePage() {
                   onClick={() => {
                     if (isActive) router.push(`/teacher/journal?scheduleId=${item.schedule.id}`);
                   }}
-                  className={`relative rounded-2xl p-4 border shadow-sm transition-all duration-200 ${config.bg} ${config.border} ${
-                    isActive ? 'cursor-pointer animate-pulse-soft hover:shadow-md' : ''
-                  } ${item.status === 'locked' || item.status === 'missed' ? 'opacity-75' : ''}`}
+                  className={`group relative rounded-[1.8rem] p-5 bg-white border-2 border-white shadow-xl shadow-gray-200/40 transition-all duration-300 ${
+                    isActive ? 'cursor-pointer hover:border-nabawi/30 hover:shadow-2xl hover:shadow-nabawi/10 active:scale-[0.98]' : ''
+                  } ${item.status === 'locked' || item.status === 'missed' ? 'opacity-80 grayscale-[0.3]' : ''}`}
                 >
-                  <div className="flex items-start justify-between">
+                  {isActive && (
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-nabawi text-white rounded-full flex items-center justify-center shadow-lg animate-bounce-slow z-20">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between relative z-10">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[10px] font-black text-nabawi-dark bg-nabawi/10 px-2 py-1 rounded-lg uppercase tracking-widest">
                           {item.schedule.startTime} - {item.schedule.endTime}
                         </span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                          {item.className}
+                        </span>
                       </div>
-                      <h3 className={`font-semibold ${item.status === 'completed' ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <h3 className={`text-lg font-black tracking-tight mb-1 uppercase ${item.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                         {item.subjectName}
                       </h3>
-                      <p className="text-sm text-gray-500">{item.className}</p>
+                      <div className="flex items-center gap-2">
+                         <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-nabawi animate-pulse' : 'bg-gray-200'}`} />
+                         <span className={`text-[10px] font-black uppercase tracking-tighter ${isActive ? 'text-nabawi' : 'text-gray-400'}`}>
+                           {config.label}
+                         </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-white shadow-inner shrink-0 ${config.bg.replace('5', '10')}`}>
                       {config.icon}
-                      <span className={`text-[10px] font-medium ${config.textColor}`}>
-                        {config.label}
-                      </span>
                     </div>
                   </div>
 
                   {isActive && (
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-xs text-nabawi font-medium">Isi Jurnal Sekarang</span>
-                      <ChevronRight className="w-4 h-4 text-nabawi" />
-                    </div>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between"
+                    >
+                      <span className="text-[10px] font-black text-nabawi uppercase tracking-widest">Ketuk untuk mengisi jurnal</span>
+                      <div className="w-8 h-8 rounded-full bg-nabawi/5 flex items-center justify-center group-hover:bg-nabawi group-hover:text-white transition-all">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </motion.div>
                   )}
                 </motion.div>
               );

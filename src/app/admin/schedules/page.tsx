@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/lib/store';
 import { AlertTriangle, Clock, GraduationCap, Plus, Edit, Trash2, ClipboardList, Settings2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -258,71 +258,94 @@ export default function SchedulesPage() {
   }, [state.schedules, dynamicTimeSlots]);
 
   return (
-    <div className="p-4 space-y-4 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="p-4 space-y-6 h-[calc(100vh-4rem)] flex flex-col pb-24">
       {/* Header */}
-      <div className="flex justify-between items-start shrink-0">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-xl font-bold text-gray-900">Jadwal Pelajaran</h1>
-          <p className="text-sm text-gray-500">Matriks jadwal dan deteksi bentrok</p>
+      <div className="flex justify-between items-end shrink-0 px-1 pt-2">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+            <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">Jadwal Pelajaran</h1>
+          </div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">Matriks & Deteksi Bentrok</p>
         </motion.div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsRekapOpen(true)} className="rounded-xl h-10 px-4 text-gray-600 bg-white hover:bg-gray-50 border-gray-200">
-            <ClipboardList className="w-4 h-4 mr-2" />
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsRekapOpen(true)} 
+            className="rounded-2xl h-12 px-5 text-gray-700 bg-white border-white shadow-xl shadow-gray-200/50 hover:bg-gray-50 font-black text-xs uppercase tracking-tighter transition-all active:scale-95"
+          >
+            <ClipboardList className="w-4 h-4 mr-2 text-nabawi" />
             Rekap
           </Button>
-          <Button onClick={() => handleOpenForm()} className="bg-nabawi hover:bg-nabawi-dark rounded-xl h-10 px-4">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={() => handleOpenForm()} 
+            className="bg-nabawi hover:bg-nabawi-dark rounded-2xl h-12 px-6 shadow-lg shadow-nabawi/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+          >
+            <Plus className="w-5 h-5 mr-2" />
             Tambah
           </Button>
         </div>
       </div>
 
-      {/* Conflicts Alert */}
-      {conflicts.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-terra/10 border border-terra/20 rounded-xl p-3 shrink-0"
-        >
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="w-5 h-5 text-terra shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-bold text-terra">Terdeteksi Jadwal Bentrok!</h3>
-              <ul className="text-xs text-terra/50 mt-1 space-y-1">
-                {conflicts.map((c, i) => {
-                  const teacher = state.teachers.find(t => t.id === c.teacherId);
-                  return (
-                    <li key={i}>• {teacher?.name} (Hari {c.day}, Jam {c.time})</li>
-                  );
-                })}
-              </ul>
+      {/* Conflicts Alert - Premium Version */}
+      <AnimatePresence>
+        {conflicts.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0, scale: 0.95 }}
+            animate={{ opacity: 1, height: 'auto', scale: 1 }}
+            exit={{ opacity: 0, height: 0, scale: 0.95 }}
+            className="bg-white/40 backdrop-blur-xl border border-terra/30 rounded-3xl p-5 shrink-0 shadow-2xl shadow-terra/10 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-terra/5 rounded-full -mr-16 -mt-16" />
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-terra/10 flex items-center justify-center shrink-0 border border-terra/20">
+                <AlertTriangle className="w-6 h-6 text-terra" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-terra uppercase tracking-tight">Terdeteksi Jadwal Bentrok!</h3>
+                <p className="text-xs text-terra/60 font-bold uppercase tracking-tighter mb-2">Segera perbaiki jadwal di bawah ini:</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {conflicts.map((c, i) => {
+                    const teacher = state.teachers.find(t => t.id === c.teacherId);
+                    return (
+                      <span key={i} className="px-3 py-1.5 bg-white/60 border border-terra/20 rounded-xl text-[10px] font-black text-terra shadow-sm uppercase tracking-tighter">
+                        {teacher?.name.split(' ')[0]} ({c.day}, {c.time})
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Grid Matrix (Scrollable) */}
-      <div className="flex-1 overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm relative">
-        <div className="min-w-[600px]">
+      {/* Grid Matrix - Premium Table */}
+      <div className="flex-1 overflow-auto rounded-[2.5rem] border border-white bg-white/50 backdrop-blur-md shadow-2xl shadow-gray-200/50 relative min-h-0">
+        <div className="min-w-[700px] pb-4">
           {/* Header Row (Days) */}
-          <div className="grid grid-cols-[80px_repeat(6,1fr)] bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
-            <div className="p-2 flex items-center justify-center border-r border-gray-200">
-              <Clock className="w-4 h-4 text-gray-400" />
+          <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-gray-100/50">
+            <div className="p-4 flex items-center justify-center border-r border-gray-100">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-gray-400" />
+              </div>
             </div>
             {days.map(day => (
-              <div key={day} className="p-2 text-center text-xs font-bold text-gray-700 border-r border-gray-200 last:border-0 uppercase tracking-wider">
-                {day}
+              <div key={day} className="p-4 text-center">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-1">HARI</span>
+                <span className="text-sm font-black text-gray-900 uppercase tracking-tight">{day}</span>
               </div>
             ))}
           </div>
 
           {/* Time Slots Rows */}
           {dynamicTimeSlots.map((slot, i) => (
-            <div key={i} className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-gray-100 last:border-0">
+            <div key={i} className="grid grid-cols-[100px_repeat(6,1fr)] group">
               {/* Time Column */}
-              <div className="p-2 flex flex-col items-center justify-center border-r border-gray-100 bg-gray-50/50">
-                <span className="text-xs font-mono font-semibold text-gray-700">{slot.start}</span>
-                <span className="text-[10px] font-mono text-gray-400">{slot.end}</span>
+              <div className="p-4 flex flex-col items-center justify-center border-r border-gray-100 bg-gray-50/30 group-hover:bg-gray-100/50 transition-colors">
+                <span className="text-sm font-black text-gray-900 tracking-tighter leading-none mb-1">{slot.start}</span>
+                <div className="w-1 h-3 bg-gray-200 rounded-full my-1" />
+                <span className="text-[10px] font-black text-gray-400 tracking-tighter leading-none uppercase">{slot.end}</span>
               </div>
 
               {/* Day Columns */}
@@ -332,53 +355,67 @@ export default function SchedulesPage() {
                 );
 
                 return (
-                  <div key={`${day}-${slot.start}`} className="p-1.5 border-r border-gray-100 last:border-0 min-h-[80px]">
-                    {daySchedules.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {daySchedules.map(schedule => {
+                  <div key={`${day}-${slot.start}`} className="p-2 border-r border-gray-50 last:border-0 min-h-[100px] relative group/cell">
+                    <div className="absolute inset-0 bg-nabawi/0 group-hover/cell:bg-nabawi/2 transition-colors" />
+                    <div className="relative z-10 h-full flex flex-col gap-2">
+                      {daySchedules.length > 0 ? (
+                        daySchedules.map(schedule => {
                           const cls = state.classes.find(c => c.id === schedule.classId);
                           const subject = state.subjects.find(s => s.id === schedule.subjectId);
+                          const teacher = state.teachers.find(t => t.id === schedule.teacherId);
                           const isConflict = conflicts.some(
                             c => c.day === day && c.time === slot.start && c.teacherId === schedule.teacherId
                           );
 
                           return (
                             <DropdownMenu key={schedule.id}>
-                              <DropdownMenuTrigger className="w-full text-left outline-none">
-                                <div 
-                                  className={`p-1.5 rounded-lg border text-[10px] ${
+                              <DropdownMenuTrigger className="w-full text-left outline-none group/item">
+                                <motion.div 
+                                  whileHover={{ scale: 1.02, y: -2 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  className={`p-3 rounded-2xl border-2 shadow-sm ${
                                     isConflict 
-                                      ? 'bg-terra/10 border-terra/30 hover:bg-terra/20' 
-                                      : 'bg-nabawi/5 border-nabawi/20 hover:bg-nabawi/10'
-                                  } transition-colors`}
+                                      ? 'bg-white border-terra/30 shadow-terra/10 hover:border-terra' 
+                                      : 'bg-white border-white shadow-gray-200/40 hover:border-nabawi/30 hover:shadow-nabawi/5'
+                                  } transition-all cursor-pointer`}
                                 >
-                                  <div className="flex items-center justify-between font-bold mb-0.5">
-                                    <span className={isConflict ? 'text-terra' : 'text-nabawi-dark'}>{subject?.name}</span>
-                                    <span className="bg-white/50 px-1 rounded text-gray-600">{cls?.name}</span>
+                                  <div className="flex items-center justify-between gap-1 mb-2">
+                                    <span className={`text-[11px] font-black uppercase tracking-tight truncate flex-1 ${isConflict ? 'text-terra' : 'text-gray-900'}`}>
+                                      {subject?.name}
+                                    </span>
+                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-lg border uppercase tracking-tighter shrink-0 ${
+                                      isConflict ? 'bg-terra/5 border-terra/10 text-terra' : 'bg-gray-50 border-gray-100 text-gray-500'
+                                    }`}>
+                                      {cls?.name}
+                                    </span>
                                   </div>
-                                  <div className={`flex items-center gap-1 ${isConflict ? 'text-terra/50' : 'text-gray-500'}`}>
-                                    <GraduationCap className="w-3 h-3" />
-                                    <span className="truncate w-full">{state.teachers.find(t => t.id === schedule.teacherId)?.name}</span>
+                                  <div className={`flex items-center gap-1.5 ${isConflict ? 'text-terra/50' : 'text-nabawi'} font-bold`}>
+                                    <div className="w-5 h-5 rounded-full bg-current opacity-10 flex items-center justify-center shrink-0">
+                                       <GraduationCap className="w-3 h-3" />
+                                    </div>
+                                    <span className="text-[9px] truncate font-black uppercase tracking-tighter">
+                                      {teacher?.name.split(' ')[0]}
+                                    </span>
                                   </div>
-                                </div>
+                                </motion.div>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="w-32">
-                                <DropdownMenuItem onClick={() => handleOpenForm(schedule)}>
-                                  <Edit className="w-4 h-4 mr-2" /> Edit
+                              <DropdownMenuContent align="start" className="w-40 rounded-2xl p-1.5 shadow-2xl border-gray-100">
+                                <DropdownMenuItem onClick={() => handleOpenForm(schedule)} className="rounded-xl font-bold text-xs p-2.5">
+                                  <Edit className="w-4 h-4 mr-2 text-nabawi" /> Edit Jadwal
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => handleDeleteSchedule(schedule.id)}>
+                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-xl font-bold text-xs p-2.5" onClick={() => handleDeleteSchedule(schedule.id)}>
                                   <Trash2 className="w-4 h-4 mr-2" /> Hapus
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-[10px] text-gray-300">-</span>
-                      </div>
-                    )}
+                        })
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="w-1 h-1 rounded-full bg-gray-200" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/lib/store';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileSpreadsheet, MoreVertical, GraduationCap, Users, BookOpen, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, FileSpreadsheet, MoreVertical, GraduationCap, Users, BookOpen, Edit, Trash2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Teacher, Student, ClassRoom, Subject } from '@/types';
 import { FormSheet } from '@/components/shared/form-sheet';
@@ -224,71 +224,82 @@ export default function MasterDataPage() {
   };
 
   return (
-    <div className="p-4 space-y-4 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="p-4 space-y-6 h-[calc(100vh-4rem)] flex flex-col pb-24">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="shrink-0">
-        <h1 className="text-xl font-bold text-gray-900">Master Data</h1>
-        <p className="text-sm text-gray-500">Kelola data inti sekolah</p>
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="shrink-0 px-1 pt-2"
+      >
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+          <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">Master Data</h1>
+        </div>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">Administrasi Inti Sekolah</p>
       </motion.div>
 
-      {/* Tabs */}
+      {/* Premium Tabs */}
       <Tabs defaultValue="guru" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-xl h-10 p-1 shrink-0">
-          <TabsTrigger value="guru" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-sm">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100/50 backdrop-blur-sm rounded-2xl h-12 p-1.5 shrink-0 border border-white shadow-sm mb-6">
+          <TabsTrigger value="guru" className="rounded-xl text-xs font-black uppercase tracking-tighter data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-lg data-[state=active]:shadow-nabawi/5">
             Guru
           </TabsTrigger>
-          <TabsTrigger value="siswa" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-sm">
+          <TabsTrigger value="siswa" className="rounded-xl text-xs font-black uppercase tracking-tighter data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-lg data-[state=active]:shadow-nabawi/5">
             Siswa
           </TabsTrigger>
-          <TabsTrigger value="kelas" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-sm truncate">
+          <TabsTrigger value="kelas" className="rounded-xl text-xs font-black uppercase tracking-tighter data-[state=active]:bg-white data-[state=active]:text-nabawi data-[state=active]:shadow-lg data-[state=active]:shadow-nabawi/5 truncate">
             Kelas/Mapel
           </TabsTrigger>
         </TabsList>
 
         {/* Tab: Guru */}
-        <TabsContent value="guru" className="flex-1 flex flex-col mt-4 min-h-0">
-          <div className="flex gap-2 mb-3 shrink-0">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <TabsContent value="guru" className="flex-1 flex flex-col mt-0 min-h-0 focus-visible:outline-none">
+          <div className="flex gap-3 mb-5 shrink-0">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-nabawi transition-colors" />
               <Input 
                 placeholder="Cari nama atau NIP..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 h-10 rounded-xl text-sm"
+                className="pl-11 h-12 rounded-2xl text-sm border-white bg-white shadow-xl shadow-gray-200/50 focus:ring-nabawi/20 transition-all font-medium"
               />
             </div>
-            <Button onClick={() => handleOpenTeacherForm()} className="h-10 w-10 p-0 rounded-xl bg-nabawi hover:bg-nabawi-dark shrink-0">
-              <Plus className="w-5 h-5" />
+            <Button onClick={() => handleOpenTeacherForm()} className="h-12 w-12 p-0 rounded-2xl bg-nabawi hover:bg-nabawi-dark shadow-lg shadow-nabawi/20 shrink-0 transition-transform active:scale-90">
+              <Plus className="w-6 h-6" />
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-1 space-y-2 pb-4">
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3 pb-8">
             {filteredTeachers.map((teacher, i) => (
               <motion.div
                 key={teacher.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex items-center gap-3"
+                className="group bg-white rounded-[1.5rem] p-4 border border-white shadow-xl shadow-gray-200/40 flex items-center gap-4 hover:shadow-2xl hover:shadow-nabawi/5 transition-all active:scale-[0.98]"
               >
-                <div className="w-10 h-10 rounded-full bg-nabawi/10 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5 text-nabawi" />
+                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-nabawi/10 to-emerald-50 flex items-center justify-center shrink-0 border border-nabawi/5">
+                  <GraduationCap className="w-6 h-6 text-nabawi" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">{teacher.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{teacher.email}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">NIP: {teacher.nip || '-'}</p>
+                  <h3 className="text-[15px] font-black text-gray-900 truncate leading-tight mb-0.5">{teacher.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] text-gray-500 font-bold truncate tracking-tight">{teacher.email}</p>
+                    {teacher.nip && (
+                       <span className="text-[10px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded-md font-bold">NIP: {teacher.nip}</span>
+                    )}
+                  </div>
                 </div>
                 
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 outline-none">
-                    <MoreVertical className="w-4 h-4" />
+                  <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-xl text-gray-300 hover:text-gray-600 transition-colors outline-none">
+                    <MoreVertical className="w-5 h-5" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem onClick={() => handleOpenTeacherForm(teacher)}>
-                      <Edit className="w-4 h-4 mr-2" /> Edit
+                  <DropdownMenuContent align="end" className="w-40 rounded-2xl p-1.5 shadow-2xl border-gray-100">
+                    <DropdownMenuItem onClick={() => handleOpenTeacherForm(teacher)} className="rounded-xl font-bold text-xs p-2.5">
+                      <Edit className="w-4 h-4 mr-2 text-nabawi" /> Edit Data
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => handleDeleteTeacher(teacher.id)}>
+                    <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-xl font-bold text-xs p-2.5" onClick={() => handleDeleteTeacher(teacher.id)}>
                       <Trash2 className="w-4 h-4 mr-2" /> Hapus
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -296,46 +307,47 @@ export default function MasterDataPage() {
               </motion.div>
             ))}
             {filteredTeachers.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-sm">Tidak ada data ditemukan</div>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white/50 rounded-[2rem] border border-white border-dashed">
+                <Users className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm font-bold uppercase tracking-widest">Data Kosong</p>
+              </div>
             )}
           </div>
         </TabsContent>
 
         {/* Tab: Siswa */}
-        <TabsContent value="siswa" className="flex-1 flex flex-col mt-4 min-h-0">
-          <div className="flex flex-col gap-2 mb-3 shrink-0">
-            <div className="flex gap-2">
-              <select 
-                value={selectedClass}
-                onChange={e => setSelectedClass(e.target.value)}
-                className="h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-              >
-                <option value="all">Semua Kelas</option>
-                {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <Button 
-                onClick={() => handleSimulateAction('Import Excel')} 
-                variant="outline" 
-                className="h-10 flex-1 rounded-xl text-success border-success/30 hover:bg-success/5 hover:text-success"
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" /> Impor Excel
-              </Button>
-              <Button onClick={() => handleOpenStudentForm()} className="h-10 w-10 p-0 rounded-xl bg-nabawi hover:bg-nabawi-dark shrink-0">
-                <Plus className="w-5 h-5" />
+        <TabsContent value="siswa" className="flex-1 flex flex-col mt-0 min-h-0 focus-visible:outline-none">
+          <div className="flex flex-col gap-3 mb-5 shrink-0">
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <select 
+                  value={selectedClass}
+                  onChange={e => setSelectedClass(e.target.value)}
+                  className="w-full h-12 pl-4 pr-10 rounded-2xl border-white bg-white text-sm font-bold text-gray-700 shadow-xl shadow-gray-200/50 appearance-none focus:ring-2 focus:ring-nabawi/20 transition-all cursor-pointer"
+                >
+                  <option value="all">🏷️ Semua Kelas</option>
+                  {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                   <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+              <Button onClick={() => handleOpenStudentForm()} className="h-12 w-12 p-0 rounded-2xl bg-nabawi hover:bg-nabawi-dark shadow-lg shadow-nabawi/20 shrink-0 transition-transform active:scale-90">
+                <Plus className="w-6 h-6" />
               </Button>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-nabawi transition-colors" />
               <Input 
                 placeholder="Cari nama atau NISN..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 h-10 rounded-xl text-sm bg-white"
+                className="pl-11 h-12 rounded-2xl text-sm border-white bg-white shadow-xl shadow-gray-200/50 focus:ring-nabawi/20 transition-all font-medium"
               />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-1 space-y-2 pb-4">
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3 pb-8">
             {filteredStudents.map((student, i) => {
               const cls = state.classes.find(c => c.id === student.classId);
               return (
@@ -344,25 +356,31 @@ export default function MasterDataPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex items-center gap-3"
+                  className="group bg-white rounded-[1.5rem] p-4 border border-white shadow-xl shadow-gray-200/40 flex items-center gap-4 hover:shadow-2xl hover:shadow-blue-500/5 transition-all active:scale-[0.98]"
                 >
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-blue-500" />
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100/50">
+                    <Users className="w-6 h-6 text-blue-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">{student.name}</h3>
-                    <p className="text-xs text-gray-500 truncate">{cls?.name || '-'}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">NISN: {student.nisn || '-'}</p>
+                    <h3 className="text-[15px] font-black text-gray-900 truncate leading-tight mb-0.5">{student.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">
+                        {cls?.name || '-'}
+                      </span>
+                      {student.nisn && (
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">NISN: {student.nisn}</span>
+                      )}
+                    </div>
                   </div>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 outline-none">
-                      <MoreVertical className="w-4 h-4" />
+                    <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-xl text-gray-300 hover:text-gray-600 transition-colors outline-none">
+                      <MoreVertical className="w-5 h-5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-32">
-                      <DropdownMenuItem onClick={() => handleOpenStudentForm(student)}>
-                        <Edit className="w-4 h-4 mr-2" /> Edit
+                    <DropdownMenuContent align="end" className="w-40 rounded-2xl p-1.5 shadow-2xl border-gray-100">
+                      <DropdownMenuItem onClick={() => handleOpenStudentForm(student)} className="rounded-xl font-bold text-xs p-2.5">
+                        <Edit className="w-4 h-4 mr-2 text-blue-600" /> Edit Data
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => handleDeleteStudent(student.id)}>
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-xl font-bold text-xs p-2.5" onClick={() => handleDeleteStudent(student.id)}>
                         <Trash2 className="w-4 h-4 mr-2" /> Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -371,86 +389,96 @@ export default function MasterDataPage() {
               );
             })}
             {filteredStudents.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-sm">Tidak ada data ditemukan</div>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white/50 rounded-[2rem] border border-white border-dashed">
+                <Users className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm font-bold uppercase tracking-widest">Data Kosong</p>
+              </div>
             )}
           </div>
         </TabsContent>
 
         {/* Tab: Kelas & Mapel */}
-        <TabsContent value="kelas" className="flex-1 flex flex-col mt-4 min-h-0 space-y-4 overflow-y-auto pb-4">
+        <TabsContent value="kelas" className="flex-1 flex flex-col mt-0 min-h-0 focus-visible:outline-none space-y-6 overflow-y-auto pb-24">
           {/* Section: Kelas */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-800">Daftar Kelas</h2>
-              <Button onClick={() => handleOpenClassForm()} variant="ghost" size="sm" className="h-8 text-nabawi hover:text-nabawi-dark hover:bg-nabawi/5">
+          <div className="px-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Daftar Kelas</h2>
+              </div>
+              <Button onClick={() => handleOpenClassForm()} variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-blue-600 font-bold hover:bg-blue-50">
                 <Plus className="w-4 h-4 mr-1" /> Tambah
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {state.classes.map((cls, i) => (
                 <motion.div
                   key={cls.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col"
+                  className="bg-white p-4 rounded-[1.5rem] border border-white shadow-xl shadow-gray-200/40 flex flex-col relative overflow-hidden group active:scale-95 transition-all"
                 >
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm font-bold text-gray-900">{cls.name}</span>
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-125" />
+                  <div className="flex justify-between items-start relative z-10 mb-2">
+                    <span className="text-base font-black text-gray-900 tracking-tighter">{cls.name}</span>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="p-1 hover:bg-gray-50 rounded-lg text-gray-400 outline-none">
-                        <MoreVertical className="w-3 h-3" />
+                      <DropdownMenuTrigger className="p-1 hover:bg-gray-100 rounded-lg text-gray-300 hover:text-gray-600 outline-none transition-colors">
+                        <MoreVertical className="w-4 h-4" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem onClick={() => handleOpenClassForm(cls)}>
-                          <Edit className="w-4 h-4 mr-2" /> Edit
+                      <DropdownMenuContent align="end" className="w-32 rounded-xl p-1 shadow-2xl border-gray-100">
+                        <DropdownMenuItem onClick={() => handleOpenClassForm(cls)} className="rounded-lg font-bold text-[11px]">
+                          <Edit className="w-3 h-3 mr-2 text-blue-600" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => handleDeleteClass(cls.id)}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                        <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg font-bold text-[11px]" onClick={() => handleDeleteClass(cls.id)}>
+                          <Trash2 className="w-3 h-3 mr-2" /> Hapus
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <span className="text-[10px] text-gray-500">Tingkat {cls.grade}</span>
+                  <span className="text-[10px] font-black text-blue-600/60 uppercase tracking-widest relative z-10">Tingkat {cls.grade}</span>
                 </motion.div>
               ))}
             </div>
           </div>
 
           {/* Section: Mapel */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-800">Mata Pelajaran</h2>
-              <Button onClick={() => handleOpenSubjectForm()} variant="ghost" size="sm" className="h-8 text-nabawi hover:text-nabawi-dark hover:bg-nabawi/5">
+          <div className="px-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 bg-amber-500 rounded-full" />
+                <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Mata Pelajaran</h2>
+              </div>
+              <Button onClick={() => handleOpenSubjectForm()} variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-amber-600 font-bold hover:bg-amber-50">
                 <Plus className="w-4 h-4 mr-1" /> Tambah
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {state.subjects.map((sub, i) => (
                 <motion.div
                   key={sub.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3"
+                  className="bg-white p-4 rounded-[1.5rem] border border-white shadow-xl shadow-gray-200/40 flex items-center gap-4 hover:shadow-2xl hover:shadow-amber-500/5 transition-all active:scale-[0.99]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center shrink-0">
-                    <BookOpen className="w-4 h-4 text-gold-dark" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+                    <BookOpen className="w-5 h-5 text-amber-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-gray-900">{sub.name}</h3>
-                    <p className="text-[10px] text-gray-500">Kode: {sub.id.toUpperCase()}</p>
+                    <h3 className="text-[15px] font-black text-gray-900 leading-none mb-1">{sub.name}</h3>
+                    <p className="text-[10px] font-black text-amber-600/60 uppercase tracking-widest">KODE: {sub.id.toUpperCase()}</p>
                   </div>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 outline-none">
-                      <MoreVertical className="w-4 h-4" />
+                    <DropdownMenuTrigger className="p-2 hover:bg-gray-50 rounded-xl text-gray-300 hover:text-gray-600 outline-none transition-colors">
+                      <MoreVertical className="w-5 h-5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-32">
-                      <DropdownMenuItem onClick={() => handleOpenSubjectForm(sub)}>
-                        <Edit className="w-4 h-4 mr-2" /> Edit
+                    <DropdownMenuContent align="end" className="w-32 rounded-xl p-1 shadow-2xl border-gray-100">
+                      <DropdownMenuItem onClick={() => handleOpenSubjectForm(sub)} className="rounded-lg font-bold text-[11px]">
+                        <Edit className="w-3 h-3 mr-2 text-amber-600" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => handleDeleteSubject(sub.id)}>
-                        <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg font-bold text-[11px]" onClick={() => handleDeleteSubject(sub.id)}>
+                        <Trash2 className="w-3 h-3 mr-2" /> Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

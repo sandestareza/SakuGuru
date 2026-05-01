@@ -45,11 +45,14 @@ export default function CalendarPage() {
   const today = new Date();
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6 pb-24">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-xl font-bold text-gray-900">Kalender Akademik</h1>
-        <p className="text-sm text-gray-500">Agenda & jadwal sekolah</p>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="px-1 pt-2">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+          <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">Kalender Akademik</h1>
+        </div>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">Agenda & Jadwal Sekolah</p>
       </motion.div>
 
       {/* Calendar */}
@@ -57,33 +60,44 @@ export default function CalendarPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+        className="bg-white rounded-[2rem] p-6 shadow-2xl shadow-gray-200/50 border-2 border-white relative overflow-hidden"
       >
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+           <CalendarDays className="w-32 h-32 text-nabawi" />
+        </div>
+
         {/* Month Navigation */}
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h2 className="text-base font-semibold text-gray-900 capitalize">
+        <div className="flex items-center justify-between mb-6 relative z-10">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setCurrentMonth(m => subMonths(m, 1))} 
+            className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-nabawi hover:bg-nabawi/5 transition-all"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </motion.button>
+          <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">
             {format(currentMonth, 'MMMM yyyy', { locale: localeId })}
           </h2>
-          <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-            <ChevronRight className="w-5 h-5 text-gray-600" />
-          </button>
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setCurrentMonth(m => addMonths(m, 1))} 
+            className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-nabawi hover:bg-nabawi/5 transition-all"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </motion.button>
         </div>
 
         {/* Day Headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-3 relative z-10">
           {dayNames.map(day => (
-            <div key={day} className="text-center text-[10px] font-semibold text-gray-400 uppercase py-1">
+            <div key={day} className="text-center text-[9px] font-black text-gray-300 uppercase py-1">
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {/* Empty cells for days before month start */}
+        <div className="grid grid-cols-7 gap-1 relative z-10">
           {Array.from({ length: startDayOfWeek }).map((_, i) => (
             <div key={`empty-${i}`} className="aspect-square" />
           ))}
@@ -99,27 +113,30 @@ export default function CalendarPage() {
               <button
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(day)}
-                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm transition-all relative ${
+                className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all relative group ${
                   isSelected
-                    ? 'bg-nabawi text-white shadow-md'
+                    ? 'bg-nabawi text-white shadow-lg shadow-nabawi/20 active:scale-95'
                     : isToday
-                      ? 'bg-nabawi/10 text-nabawi font-bold ring-2 ring-nabawi/30'
+                      ? 'bg-nabawi/5 text-nabawi font-black border-2 border-nabawi/20 active:scale-95'
                       : hasEvents
-                        ? `${eventTypeConfig[eventType!].bg} border font-medium`
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? `${eventTypeConfig[eventType!].bg} border-2 border-white shadow-sm font-black active:scale-95`
+                        : 'text-gray-900 font-bold hover:bg-gray-50 active:scale-95'
                 }`}
               >
-                <span className="text-xs">{format(day, 'd')}</span>
+                <span className="text-[11px] uppercase tracking-tighter">{format(day, 'd')}</span>
+                {hasEvents && !isSelected && (
+                   <div className={`absolute bottom-1 w-1 h-1 rounded-full ${eventTypeConfig[eventType!].color.replace('text-', 'bg-')}`} />
+                )}
               </button>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-gray-100">
+        <div className="flex flex-wrap gap-4 mt-8 pt-4 border-t border-gray-50 relative z-10">
           {Object.entries(eventTypeConfig).map(([key, config]) => (
-            <div key={key} className={`flex items-center gap-1.5 text-[10px] ${config.color}`}>
-              <div className={`w-2.5 h-2.5 rounded-sm ${config.bg} border`} />
+            <div key={key} className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest ${config.color}`}>
+              <div className={`w-3 h-3 rounded-md ${config.bg.replace('10', '20')} border-white border shadow-sm`} />
               {config.label}
             </div>
           ))}
@@ -134,43 +151,55 @@ export default function CalendarPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-2"
+            className="space-y-4"
           >
-            <h3 className="text-sm font-semibold text-gray-700 px-1">
-              {format(selectedDate, "EEEE, d MMMM yyyy", { locale: localeId })}
-            </h3>
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                {format(selectedDate, "EEEE, d MMMM yyyy", { locale: localeId })}
+              </h3>
+              <div className="h-px flex-1 bg-gray-100 ml-4" />
+            </div>
 
             {selectedDateEvents.length > 0 ? (
-              selectedDateEvents.map((event, i) => {
-                const config = eventTypeConfig[event.type];
-                return (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={`rounded-xl p-4 border ${config.bg}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={config.color}>{config.icon}</div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-gray-900">{event.title}</h4>
-                        {event.description && (
-                          <p className="text-xs text-gray-500 mt-1">{event.description}</p>
-                        )}
-                        <p className="text-[10px] text-gray-400 mt-2">
-                          {format(parseISO(event.startDate), 'd MMM', { locale: localeId })}
-                          {event.startDate !== event.endDate && ` — ${format(parseISO(event.endDate), 'd MMM yyyy', { locale: localeId })}`}
-                        </p>
+              <div className="space-y-3">
+                {selectedDateEvents.map((event, i) => {
+                  const config = eventTypeConfig[event.type];
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`group relative rounded-[1.8rem] p-5 bg-white border-2 border-white shadow-xl shadow-gray-200/40 transition-all ${config.bg.replace('10', '5')}`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-white shadow-sm shrink-0 ${config.bg}`}>
+                           <div className={config.color}>{config.icon}</div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-1">{event.title}</h4>
+                          {event.description && (
+                            <p className="text-[11px] font-medium text-gray-500 leading-relaxed">{event.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-3">
+                            <Clock className="w-3 h-3 text-gray-300" />
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                              {format(parseISO(event.startDate), 'd MMM', { locale: localeId })}
+                              {event.startDate !== event.endDate && ` — ${format(parseISO(event.endDate), 'd MMM yyyy', { locale: localeId })}`}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })
+                    </motion.div>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="bg-white rounded-xl p-6 text-center border border-gray-100">
-                <CalendarDays className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-400">Tidak ada agenda di tanggal ini</p>
+              <div className="bg-white rounded-[2rem] p-10 text-center border-2 border-white shadow-2xl shadow-gray-200/50">
+                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CalendarDays className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-xs font-black text-gray-300 uppercase tracking-widest">Tidak Ada Agenda</p>
               </div>
             )}
           </motion.div>

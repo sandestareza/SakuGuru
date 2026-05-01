@@ -123,31 +123,37 @@ export default function Topbar() {
 
         {/* Profile Area */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-gray-50 rounded-full pl-1 pr-2 py-1 transition-colors outline-none">
-              <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+          <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-gray-100/50 rounded-full pl-1 pr-3 py-1 transition-all outline-none border border-transparent hover:border-gray-200/50 group">
+              <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:shadow transition-all group-hover:scale-105">
                 {state.currentUser?.avatar ? (
                   <img src={state.currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon className="w-4 h-4 text-gray-400" />
                 )}
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden sm:block" />
+              <div className="hidden sm:block text-left mr-1">
+                 <p className="text-xs font-bold text-gray-700 leading-none">{state.currentUser?.name?.split(' ')[0] || 'User'}</p>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden sm:block group-hover:text-gray-600 transition-colors" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-xl p-1">
-            <div className="px-3 py-2.5">
+          <DropdownMenuContent align="end" className="w-64 rounded-2xl p-1.5 shadow-2xl border-gray-100/50 backdrop-blur-xl bg-white/95">
+            <div className="px-4 py-3">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Profil Akun</p>
               <p className="text-sm font-bold text-gray-900 truncate">{state.currentUser?.name || 'User'}</p>
-              <p className="text-xs text-gray-500 truncate">{state.currentUser?.email || ''}</p>
+              <p className="text-[11px] text-gray-500 truncate font-medium">{state.currentUser?.email || ''}</p>
             </div>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-gray-50" />
             <DropdownMenuItem
               onClick={() => {
                 logout();
                 router.push('/login');
               }}
-              className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg cursor-pointer"
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-xl cursor-pointer p-2.5 font-bold text-xs"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Keluar
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mr-3">
+                <LogOut className="w-4 h-4" />
+              </div>
+              Keluar dari SakuGuru
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

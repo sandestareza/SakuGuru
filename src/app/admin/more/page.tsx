@@ -47,15 +47,22 @@ export default function MorePage() {
   ];
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 pb-24">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-xl font-bold text-gray-900">Menu Lainnya</h1>
-        <p className="text-sm text-gray-500">Akses fitur tambahan SakuGuru</p>
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }}
+        className="px-1 pt-2"
+      >
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1.5 h-6 bg-nabawi rounded-full" />
+          <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">Menu Lainnya</h1>
+        </div>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">Fitur Tambahan SakuGuru</p>
       </motion.div>
 
       {/* Menu List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4">
         {menuItems.map((item, i) => (
           <motion.div
             key={item.href}
@@ -63,25 +70,33 @@ export default function MorePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
           >
-            <Link href={item.href} className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all active:scale-[0.98]">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${item.bg}`}>
+            <Link href={item.href} className="group relative flex items-center gap-5 bg-white rounded-[1.8rem] p-5 border border-white shadow-xl shadow-gray-200/50 hover:shadow-2xl hover:shadow-nabawi/10 transition-all active:scale-[0.98] overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-125" />
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg relative z-10 ${item.bg}`}>
                 {item.icon}
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 truncate">{item.label}</h3>
-                <p className="text-xs text-gray-500 truncate">{item.desc}</p>
+              <div className="flex-1 min-w-0 relative z-10">
+                <h3 className="text-base font-black text-gray-900 tracking-tight mb-1 uppercase leading-none">{item.label}</h3>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter leading-tight">{item.desc}</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
+              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-nabawi group-hover:text-white transition-all relative z-10">
+                <ChevronRight className="w-5 h-5" />
+              </div>
             </Link>
           </motion.div>
         ))}
       </div>
 
       {/* Logout Button */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="pt-4 border-t border-gray-200">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        transition={{ delay: 0.3 }} 
+        className="pt-6"
+      >
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 text-terra text-sm font-medium hover:bg-terra/5 rounded-xl transition-colors bg-white border border-terra/20"
+          className="w-full flex items-center justify-center gap-3 py-4 text-terra text-xs font-black uppercase tracking-widest hover:bg-terra/5 rounded-2xl transition-all bg-white border border-terra/20 shadow-xl shadow-terra/5 active:scale-95"
         >
           <LogOut className="w-5 h-5" /> Keluar dari Akun Admin
         </button>
