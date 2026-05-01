@@ -192,7 +192,7 @@ export default function Topbar() {
                   )}
                 </div>
               ) : (
-                <div className="text-center text-gray-400 text-sm mt-10">
+                <div className="hidden lg:block text-center text-gray-400 text-sm mt-10">
                   Ketik nama atau NISN santri
                 </div>
               )}

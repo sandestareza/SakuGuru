@@ -12,14 +12,57 @@ import { format, parseISO } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import {
   User, History, Shield, LogOut, ChevronRight,
-  CheckCircle2, Clock, BookOpen, Eye, EyeOff,
+  CheckCircle2, Clock, BookOpen, Eye, EyeOff, Camera, X, Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { state, logout } = useApp();
+  const { state, dispatch, logout } = useApp();
   const currentUser = state.currentUser;
+
+  // Profile Edit state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    nip: currentUser?.nip || '',
+    phone: '',
+    avatar: currentUser?.avatar || '',
+  });
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    
+    // Update current user
+    const updatedUser = { ...currentUser, ...profileForm };
+    dispatch({ type: 'SET_USER', payload: updatedUser });
+    
+    // Update teacher record if possible
+    const teacherRecord = state.teachers.find(t => t.id === currentUser.id);
+    if (teacherRecord) {
+      dispatch({ 
+        type: 'UPDATE_TEACHER', 
+        payload: { ...teacherRecord, name: profileForm.name, nip: profileForm.nip, email: profileForm.email, phone: profileForm.phone, avatar: profileForm.avatar } 
+      });
+    }
+
+    toast.success('Profil berhasil diperbarui');
+    setIsEditingProfile(false);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Simulate photo upload using FileReader
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileForm(prev => ({ ...prev, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Security state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -61,16 +104,89 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
       >
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-nabawi/10 flex items-center justify-center">
-            <User className="w-8 h-8 text-nabawi" />
+        {isEditingProfile ? (
+          <form onSubmit={handleSaveProfile} className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-gray-900">Edit Profil</h2>
+              <button 
+                type="button" 
+                onClick={() => setIsEditingProfile(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                  {profileForm.avatar ? (
+                    <img src={profileForm.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-gray-400" />
+                  )}
+                </div>
+                <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-nabawi text-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-nabawi-dark transition-colors">
+                  <Camera className="w-4 h-4" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs text-gray-600">Nama Lengkap</Label>
+                <Input value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})} className="h-10 text-sm rounded-xl" required />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600">Email</Label>
+                <Input type="email" value={profileForm.email} onChange={e => setProfileForm({...profileForm, email: e.target.value})} className="h-10 text-sm rounded-xl" required />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600">NIP</Label>
+                <Input value={profileForm.nip} onChange={e => setProfileForm({...profileForm, nip: e.target.value})} className="h-10 text-sm rounded-xl" required />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600">No. WhatsApp</Label>
+                <Input type="tel" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="h-10 text-sm rounded-xl" />
+              </div>
+            </div>
+            
+            <Button type="submit" className="w-full h-10 rounded-xl bg-nabawi hover:bg-nabawi-dark text-white font-semibold">
+              <Save className="w-4 h-4 mr-2" /> Simpan Profil
+            </Button>
+          </form>
+        ) : (
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-nabawi/10 flex items-center justify-center overflow-hidden shrink-0">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 text-nabawi" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-gray-900">{currentUser?.name || 'Guru'}</h1>
+              <p className="text-sm text-gray-500">{currentUser?.email || '-'}</p>
+              <p className="text-xs text-gray-400 mt-0.5">NIP: {currentUser?.nip || '-'}</p>
+            </div>
+            <button 
+              onClick={() => {
+                setProfileForm({
+                  name: currentUser?.name || '',
+                  email: currentUser?.email || '',
+                  nip: currentUser?.nip || '',
+                  phone: state.teachers.find(t => t.id === currentUser?.id)?.phone || '',
+                  avatar: currentUser?.avatar || '',
+                });
+                setIsEditingProfile(true);
+              }}
+              className="text-xs font-semibold text-nabawi hover:underline shrink-0"
+            >
+              Edit
+            </button>
           </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900">{currentUser?.name || 'Guru'}</h1>
-            <p className="text-sm text-gray-500">{currentUser?.email || '-'}</p>
-            <p className="text-xs text-gray-400 mt-0.5">NIP: {currentUser?.nip || '-'}</p>
-          </div>
-        </div>
+        )}
       </motion.div>
 
       {/* Tabs */}
