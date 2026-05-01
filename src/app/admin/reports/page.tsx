@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "@/lib/store";
@@ -10,10 +10,15 @@ import {
   Download,
   Printer,
   CheckCircle2,
+  CalendarDays,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import type { DayOfWeek } from "@/types";
+
+const ALL_DAYS: DayOfWeek[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -22,10 +27,31 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
   const [month, setMonth] = useState<string>(format(new Date(), "yyyy-MM"));
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
+  // Get current school
+  const currentSchool = useMemo(() => {
+    const schoolId = state.currentUser?.schoolId;
+    return state.schools.find(s => s.id === schoolId) || state.schools[0];
+  }, [state.schools, state.currentUser]);
+
+  const jpDuration = currentSchool?.lessonDurationMinutes || 45;
+
   const reportTypes = [
+    {
+      id: "jadwal",
+      title: "Cetak Jadwal Kelas",
+      desc: "Jadwal pelajaran per kelas format formal",
+      icon: "calendar",
+    },
+    {
+      id: "jadwal_guru",
+      title: "Cetak Jadwal Guru",
+      desc: "Jadwal mengajar per guru format formal",
+      icon: "graduation",
+    },
     {
       id: "absensi",
       title: "Rekap Absensi",
@@ -45,6 +71,336 @@ export default function ReportsPage() {
       success: `Laporan berhasil diunduh (${type.toUpperCase()})`,
       error: "Gagal mengunduh laporan",
     });
+  };
+
+  // ===== JADWAL KELAS PRINT =====
+  const handlePrintJadwalKelas = () => {
+    const schoolName = currentSchool?.name || 'Sekolah';
+    const fmtTime = (t: string) => t.replace(':', '.');
+    const targetClassIds = selectedClass === 'all'
+      ? [...new Set(state.schedules.map(s => s.classId))]
+      : [selectedClass];
+
+    const classPrintStyles = `
+      <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, 'Segoe UI', sans-serif; color: #000; padding: 12px; font-size: 11px; }
+        .print-header { text-align: center; margin-bottom: 16px; }
+        .print-header h1 { font-size: 16px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .print-header h2 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .print-header p { font-size: 10px; color: #555; }
+        .schedule-section { margin-bottom: 28px; page-break-inside: avoid; }
+        .section-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; padding: 5px 10px; background: #e8e8e8; border: 1px solid #999; text-align: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 2px solid #333; padding: 5px 4px; text-align: center; vertical-align: middle; }
+        thead th { background: #dbeafe; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+        .jam-col { width: 35px; font-weight: 700; font-size: 12px; background: #f9f9f9; }
+        .pukul-col { width: 90px; font-weight: 600; font-size: 10px; white-space: nowrap; background: #f9f9f9; }
+        .subject-cell { font-weight: 700; font-size: 10px; text-transform: uppercase; padding: 6px 3px; line-height: 1.3; }
+        .empty-cell { color: #ccc; }
+        .footer { text-align: right; font-size: 8px; color: #999; margin-top: 12px; border-top: 1px solid #ccc; padding-top: 6px; }
+        @media print { body { padding: 0; } }
+      </style>
+    `;
+
+    let sections = '';
+    targetClassIds.forEach(cid => {
+      const cls = state.classes.find(c => c.id === cid);
+      if (!cls) return;
+      const classSchedules = state.schedules.filter(s => s.classId === cid);
+
+      // Collect all unique time slots across all days
+      const allSlots = [...new Set(classSchedules.map(s => `${s.startTime}-${s.endTime}`))]
+        .map(sl => { const [start, end] = sl.split('-'); return { start, end }; })
+        .sort((a, b) => a.start.localeCompare(b.start));
+
+      if (allSlots.length === 0) return;
+
+      let rows = '';
+      allSlots.forEach((slot, i) => {
+        rows += `<tr>`;
+        rows += `<td class="jam-col">${i + 1}</td>`;
+        rows += `<td class="pukul-col">${fmtTime(slot.start)} – ${fmtTime(slot.end)}</td>`;
+        ALL_DAYS.forEach(day => {
+          const match = classSchedules.find(s => s.dayOfWeek === day && s.startTime === slot.start && s.endTime === slot.end);
+          if (match) {
+            const sub = state.subjects.find(s => s.id === match.subjectId);
+            rows += `<td class="subject-cell">${(sub?.name || '-').toUpperCase()}</td>`;
+          } else {
+            rows += `<td class="empty-cell"></td>`;
+          }
+        });
+        rows += `</tr>`;
+      });
+
+      const header = `<thead><tr><th>JAM</th><th>PUKUL</th>${ALL_DAYS.map(d => `<th>${d.toUpperCase()}</th>`).join('')}</tr></thead>`;
+
+      sections += `<div class="schedule-section"><div class="section-title">JADWAL PELAJARAN KELAS ${cls.name.toUpperCase()}</div><table>${header}<tbody>${rows}</tbody></table></div>`;
+    });
+
+    const html = `<!DOCTYPE html><html><head><title>Jadwal Kelas - ${schoolName}</title>${classPrintStyles}</head><body>
+      <div class="print-header"><h1>${schoolName}</h1><h2>JADWAL PELAJARAN</h2><p>Tahun Pelajaran ${new Date().getFullYear()}/${new Date().getFullYear() + 1}</p></div>
+      ${sections}
+      <div class="footer">Dicetak dari SakuGuru • ${new Date().toLocaleString('id-ID')}</div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    if (win) { win.document.write(html); win.document.close(); win.onload = () => win.print(); }
+  };
+
+  /** Jadwal preview table rendered in-app */
+  const renderJadwalPreview = () => {
+    const targetClassIds = selectedClass === 'all'
+      ? [...new Set(state.schedules.map(s => s.classId))]
+      : [selectedClass];
+
+    return (
+      <div className="space-y-6 p-3">
+        {targetClassIds.map(cid => {
+          const cls = state.classes.find(c => c.id === cid);
+          if (!cls) return null;
+          const classSchedules = state.schedules.filter(s => s.classId === cid);
+
+          const allSlots = [...new Set(classSchedules.map(s => `${s.startTime}-${s.endTime}`))]
+            .map(sl => { const [start, end] = sl.split('-'); return { start, end }; })
+            .sort((a, b) => a.start.localeCompare(b.start));
+
+          if (allSlots.length === 0) return (
+            <div key={cid} className="text-center text-gray-400 text-xs py-4">Kelas {cls.name} — belum ada jadwal</div>
+          );
+
+          return (
+            <div key={cid}>
+              <div className="text-xs font-bold text-gray-700 mb-2 bg-gray-100 px-3 py-1.5 rounded-lg text-center">KELAS {cls.name.toUpperCase()}</div>
+              <table className="w-full text-left border-collapse text-[9px] sm:text-[10px]">
+                <thead className="bg-blue-50">
+                  <tr className="border border-gray-300">
+                    <th className="border border-gray-300 p-1.5 text-center font-bold text-gray-700 w-8">JP</th>
+                    <th className="border border-gray-300 p-1.5 text-center font-bold text-gray-700 w-16">PUKUL</th>
+                    {ALL_DAYS.map(d => <th key={d} className="border border-gray-300 p-1.5 text-center font-bold text-gray-700">{d.toUpperCase()}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {allSlots.map((slot, i) => (
+                    <tr key={i} className="border border-gray-200">
+                      <td className="border border-gray-200 p-1.5 text-center font-bold text-gray-600 bg-gray-50">{i + 1}</td>
+                      <td className="border border-gray-200 p-1.5 text-center font-semibold text-gray-600 bg-gray-50 whitespace-nowrap text-[8px]">
+                        {slot.start.replace(':', '.')} – {slot.end.replace(':', '.')}
+                      </td>
+                      {ALL_DAYS.map(day => {
+                        const match = classSchedules.find(s => s.dayOfWeek === day && s.startTime === slot.start && s.endTime === slot.end);
+                        const sub = match ? state.subjects.find(s => s.id === match.subjectId) : null;
+                        return <td key={day} className="border border-gray-200 p-1.5 text-center font-bold text-gray-800 uppercase">{sub?.name || ''}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ===== JADWAL GURU PRINT =====
+  const DAY_COLORS = [
+    { bg: '#fff8e1', border: '#f9a825', head: '#f57f17' },  // Senin - kuning
+    { bg: '#e3f2fd', border: '#1976d2', head: '#0d47a1' },  // Selasa - biru
+    { bg: '#e8f5e9', border: '#388e3c', head: '#1b5e20' },  // Rabu - hijau
+    { bg: '#fff3e0', border: '#ef6c00', head: '#e65100' },  // Kamis - oranye
+    { bg: '#fce4ec', border: '#c62828', head: '#b71c1c' },  // Jumat - merah
+    { bg: '#f3e5f5', border: '#7b1fa2', head: '#4a148c' },  // Sabtu - ungu
+  ];
+
+  const handlePrintJadwalGuru = () => {
+    const schoolName = currentSchool?.name || 'Sekolah';
+    const fmtTime = (t: string) => t.replace(':', '.');
+    const targetTeacherIds = selectedTeacher === 'all'
+      ? [...new Set(state.schedules.map(s => s.teacherId))]
+      : [selectedTeacher];
+
+    const guruPrintStyles = `
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, 'Segoe UI', sans-serif; color: #000; padding: 10px; font-size: 10px; }
+        .print-header { text-align: center; margin-bottom: 12px; }
+        .print-header h1 { font-size: 14px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .print-header h2 { font-size: 12px; font-weight: 700; }
+        .print-header p { font-size: 9px; color: #555; }
+        .teacher-section { margin-bottom: 24px; page-break-inside: avoid; }
+        .teacher-header { display: flex; gap: 16px; align-items: center; margin-bottom: 10px; padding: 8px 12px; background: #e8f5e9; border: 2px solid #2d5a3d; border-radius: 4px; }
+        .teacher-header .label { font-weight: 700; font-size: 11px; color: #2d5a3d; }
+        .teacher-header .value { font-weight: 600; font-size: 11px; }
+        .teacher-header .jp-badge { background: #2d5a3d; color: white; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+        .days-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .day-card { border: 2px solid #999; border-radius: 4px; overflow: hidden; }
+        .day-title { writing-mode: vertical-rl; text-orientation: mixed; font-weight: 700; font-size: 11px; color: white; padding: 6px 4px; text-align: center; letter-spacing: 2px; }
+        .day-table { width: 100%; border-collapse: collapse; }
+        .day-table th { padding: 4px 6px; font-weight: 700; font-size: 9px; border: 1px solid #ccc; background: #f5f5f5; text-align: center; }
+        .day-table td { padding: 3px 5px; font-size: 9px; border: 1px solid #ddd; text-align: center; }
+        .day-table td.subject { text-align: left; font-weight: 600; }
+        .empty-msg { text-align: center; padding: 8px; color: #999; font-size: 9px; }
+        .footer { text-align: right; font-size: 8px; color: #999; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 4px; }
+        @media print { body { padding: 0; } }
+      </style>
+    `;
+
+    let sections = '';
+    targetTeacherIds.forEach(tid => {
+      const teacher = state.teachers.find(t => t.id === tid);
+      if (!teacher) return;
+      let teacherSchedules = state.schedules.filter(s => s.teacherId === tid);
+      if (selectedSubject !== 'all') {
+        teacherSchedules = teacherSchedules.filter(s => s.subjectId === selectedSubject);
+      }
+      if (teacherSchedules.length === 0) return;
+
+      const totalJP = teacherSchedules.length;
+      const subjectName = selectedSubject !== 'all'
+        ? state.subjects.find(s => s.id === selectedSubject)?.name || 'Semua'
+        : 'Semua Mapel';
+
+      let dayCards = '';
+      ALL_DAYS.forEach((day, di) => {
+        const color = DAY_COLORS[di];
+        const daySchedules = teacherSchedules
+          .filter(s => s.dayOfWeek === day)
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        let tableRows = '';
+        if (daySchedules.length === 0) {
+          tableRows = `<tr><td colspan="4" class="empty-msg">Tidak ada jadwal</td></tr>`;
+        } else {
+          // Compute JP number based on all schedules for that day in the class
+          daySchedules.forEach(s => {
+            const sub = state.subjects.find(sb => sb.id === s.subjectId);
+            const cls = state.classes.find(c => c.id === s.classId);
+            tableRows += `<tr><td>${fmtTime(s.startTime)}</td><td>${fmtTime(s.startTime)} - ${fmtTime(s.endTime)}</td><td class="subject">${sub?.name || '-'}</td><td>${cls?.name || '-'}</td></tr>`;
+          });
+        }
+
+        dayCards += `
+          <div class="day-card" style="border-color:${color.border}">
+            <div style="display:flex">
+              <div class="day-title" style="background:${color.head}">${day.toUpperCase()}</div>
+              <div style="flex:1">
+                <table class="day-table">
+                  <thead><tr><th>Jam Ke</th><th>Waktu</th><th>Mata Pelajaran</th><th>Kelas</th></tr></thead>
+                  <tbody>${tableRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      sections += `
+        <div class="teacher-section">
+          <div class="teacher-header">
+            <div><span class="label">Guru:</span> <span class="value">${teacher.name}</span></div>
+            <div class="jp-badge">${totalJP} JP</div>
+            <div style="margin-left:auto"><span class="label">Bidang Studi:</span> <span class="value">${subjectName}</span></div>
+          </div>
+          <div class="days-grid">${dayCards}</div>
+        </div>
+      `;
+    });
+
+    const html = `<!DOCTYPE html><html><head><title>Jadwal Guru - ${schoolName}</title>${guruPrintStyles}</head><body>
+      <div class="print-header"><h1>${schoolName}</h1><h2>JADWAL MENGAJAR GURU</h2><p>Tahun Pelajaran ${new Date().getFullYear()}/${new Date().getFullYear() + 1}</p></div>
+      ${sections}
+      <div class="footer">Dicetak dari SakuGuru \u2022 ${new Date().toLocaleString('id-ID')}</div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    if (win) { win.document.write(html); win.document.close(); win.onload = () => win.print(); }
+  };
+
+  /** Jadwal Guru preview rendered in-app */
+  const renderJadwalGuruPreview = () => {
+    const targetTeacherIds = selectedTeacher === 'all'
+      ? [...new Set(state.schedules.map(s => s.teacherId))]
+      : [selectedTeacher];
+
+    const dayBgColors = ['bg-yellow-50', 'bg-blue-50', 'bg-green-50', 'bg-orange-50', 'bg-red-50', 'bg-purple-50'];
+    const dayBorderColors = ['border-yellow-400', 'border-blue-400', 'border-green-400', 'border-orange-400', 'border-red-400', 'border-purple-400'];
+    const dayHeadColors = ['bg-yellow-600', 'bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-red-600', 'bg-purple-600'];
+
+    return (
+      <div className="space-y-6 p-2">
+        {targetTeacherIds.map(tid => {
+          const teacher = state.teachers.find(t => t.id === tid);
+          if (!teacher) return null;
+          let teacherSchedules = state.schedules.filter(s => s.teacherId === tid);
+          if (selectedSubject !== 'all') {
+            teacherSchedules = teacherSchedules.filter(s => s.subjectId === selectedSubject);
+          }
+          if (teacherSchedules.length === 0) return null;
+
+          const totalJP = teacherSchedules.length;
+
+          return (
+            <div key={tid}>
+              {/* Teacher Header */}
+              <div className="flex items-center gap-3 mb-2 p-2 bg-nabawi/5 border border-nabawi/20 rounded-lg">
+                <div className="text-[10px]"><span className="font-bold text-nabawi">Guru:</span> <span className="font-semibold">{teacher.name}</span></div>
+                <div className="bg-nabawi text-white text-[9px] font-bold px-2 py-0.5 rounded">{totalJP} JP</div>
+              </div>
+              {/* Days Grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_DAYS.map((day, di) => {
+                  const daySchedules = teacherSchedules
+                    .filter(s => s.dayOfWeek === day)
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                  return (
+                    <div key={day} className={`border-2 ${dayBorderColors[di]} rounded-lg overflow-hidden`}>
+                      <div className="flex">
+                        <div className={`${dayHeadColors[di]} text-white text-[9px] font-bold px-1.5 py-3 flex items-center justify-center`}
+                             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '2px' }}>
+                          {day.toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <table className="w-full text-[8px] border-collapse">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="border border-gray-200 p-1 font-bold w-6">JP</th>
+                                <th className="border border-gray-200 p-1 font-bold w-16">Waktu</th>
+                                <th className="border border-gray-200 p-1 font-bold">Mapel</th>
+                                <th className="border border-gray-200 p-1 font-bold w-10">Kelas</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {daySchedules.length === 0 ? (
+                                <tr><td colSpan={4} className="text-center p-2 text-gray-300 text-[7px]">-</td></tr>
+                              ) : daySchedules.map((s, si) => {
+                                const sub = state.subjects.find(sb => sb.id === s.subjectId);
+                                const cls = state.classes.find(c => c.id === s.classId);
+                                return (
+                                  <tr key={s.id} className={di % 2 === 0 ? 'bg-white' : dayBgColors[di]}>
+                                    <td className="border border-gray-200 p-1 text-center font-bold">{si + 1}</td>
+                                    <td className="border border-gray-200 p-1 text-center whitespace-nowrap">{s.startTime.replace(':','.')}-{s.endTime.replace(':','.')}</td>
+                                    <td className="border border-gray-200 p-1 font-semibold">{sub?.name || '-'}</td>
+                                    <td className="border border-gray-200 p-1 text-center">{cls?.name || '-'}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const renderPreviewTable = () => {
@@ -433,7 +789,7 @@ export default function ReportsPage() {
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      <FileText className="w-5 h-5" />
+                      {type.icon === 'calendar' ? <CalendarDays className="w-5 h-5" /> : type.icon === 'graduation' ? <GraduationCap className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                     </div>
                     <div>
                       <h3
@@ -468,53 +824,69 @@ export default function ReportsPage() {
               </h2>
 
               <div className="space-y-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div>
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
-                    Pilih Kelas
-                  </label>
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                  >
-                    <option value="all">Semua Kelas</option>
-                    {state.classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Guru filter — only for jadwal_guru */}
+                {reportType === 'jadwal_guru' && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Guru</label>
+                    <select
+                      value={selectedTeacher}
+                      onChange={(e) => setSelectedTeacher(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
+                    >
+                      <option value="all">Semua Guru</option>
+                      {state.teachers.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                <div>
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
-                    Pilih Mapel
-                  </label>
-                  <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                  >
-                    <option value="all">Semua Mapel</option>
-                    {state.subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Kelas filter — for jadwal, absensi, nilai, jurnal */}
+                {reportType !== 'jadwal_guru' && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Kelas</label>
+                    <select
+                      value={selectedClass}
+                      onChange={(e) => setSelectedClass(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
+                    >
+                      <option value="all">Semua Kelas</option>
+                      {state.classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                <div>
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
-                    Periode Bulan
-                  </label>
-                  <input
-                    type="month"
-                    value={month}
-                    onChange={(e) => setMonth(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
-                  />
-                </div>
+                {/* Mapel filter — for jadwal_guru, nilai, jurnal */}
+                {(reportType === 'jadwal_guru' || reportType === 'nilai' || reportType === 'jurnal') && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Pilih Mapel</label>
+                    <select
+                      value={selectedSubject}
+                      onChange={(e) => setSelectedSubject(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
+                    >
+                      <option value="all">Semua Mapel</option>
+                      {state.subjects.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Bulan filter — for absensi, nilai, jurnal */}
+                {(reportType === 'absensi' || reportType === 'nilai' || reportType === 'jurnal') && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Periode Bulan</label>
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={(e) => setMonth(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white focus:ring-1 focus:ring-nabawi"
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -526,13 +898,13 @@ export default function ReportsPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
+              className="flex flex-col h-full"
             >
-              <h2 className="text-sm font-semibold text-gray-800">
+              <h2 className="text-sm font-semibold text-gray-800 mb-2 shrink-0">
                 Preview Data (Simulasi)
               </h2>
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[400px]">
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
                 <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <span className="text-xs font-semibold text-gray-700 uppercase">
                     {reportTypes.find((t) => t.id === reportType)?.title}
@@ -544,7 +916,7 @@ export default function ReportsPage() {
                   </span>
                 </div>
                 <div className="flex-1 overflow-auto bg-white">
-                  {renderPreviewTable()}
+                  {reportType === 'jadwal' ? renderJadwalPreview() : reportType === 'jadwal_guru' ? renderJadwalGuruPreview() : renderPreviewTable()}
                 </div>
               </div>
             </motion.div>
@@ -565,7 +937,7 @@ export default function ReportsPage() {
         ) : (
           <div className="flex gap-2">
             <Button
-              onClick={() => handleExport("pdf")}
+              onClick={() => reportType === 'jadwal' ? handlePrintJadwalKelas() : reportType === 'jadwal_guru' ? handlePrintJadwalGuru() : handleExport("pdf")}
               className="flex-1 h-12 rounded-xl bg-terra hover:bg-terra-muted text-white font-semibold"
             >
               <Printer className="w-4 h-4 mr-2" /> PDF

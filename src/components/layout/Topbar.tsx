@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, User as UserIcon } from 'lucide-react';
+import { Search, X, User as UserIcon, LogOut, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/lib/store';
 import type { Student } from '@/types';
 import StudentDetailModal from '@/components/shared/StudentDetailModal';
 
 export default function Topbar() {
-  const { state } = useApp();
+  const { state, logout } = useApp();
+  const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -119,15 +122,35 @@ export default function Topbar() {
         </div>
 
         {/* Profile Area */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-            {state.currentUser?.avatar ? (
-              <img src={state.currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <UserIcon className="w-4 h-4 text-gray-400" />
-            )}
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-gray-50 rounded-full pl-1 pr-2 py-1 transition-colors outline-none">
+              <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                {state.currentUser?.avatar ? (
+                  <img src={state.currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden sm:block" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 rounded-xl p-1">
+            <div className="px-3 py-2.5">
+              <p className="text-sm font-bold text-gray-900 truncate">{state.currentUser?.name || 'User'}</p>
+              <p className="text-xs text-gray-500 truncate">{state.currentUser?.email || ''}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Keluar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Mobile Full Screen Input Overlay */}
         <AnimatePresence>
