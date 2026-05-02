@@ -87,29 +87,68 @@ export const dummyStudents: Student[] = studentNames.flatMap((name, i) => {
   }];
 });
 
-// ===== SCHEDULES (for teacher u1 / t1 - Ahmad Fauzi) =====
-export const dummySchedules: Schedule[] = [
-  // Senin
-  { id: 'sch1', dayOfWeek: 'Senin', startTime: '07:00', endTime: '08:30', teacherId: 't1', classId: 'c1', subjectId: 'sub1', schoolId: 's1' },
-  { id: 'sch2', dayOfWeek: 'Senin', startTime: '08:30', endTime: '10:00', teacherId: 't1', classId: 'c2', subjectId: 'sub1', schoolId: 's1' },
-  { id: 'sch3', dayOfWeek: 'Senin', startTime: '10:15', endTime: '11:45', teacherId: 't1', classId: 'c4', subjectId: 'sub1', schoolId: 's1' },
-  // Selasa
-  { id: 'sch4', dayOfWeek: 'Selasa', startTime: '07:00', endTime: '08:30', teacherId: 't1', classId: 'c3', subjectId: 'sub1', schoolId: 's1' },
-  { id: 'sch5', dayOfWeek: 'Selasa', startTime: '10:15', endTime: '11:45', teacherId: 't1', classId: 'c5', subjectId: 'sub1', schoolId: 's1' },
-  // Rabu
-  { id: 'sch6', dayOfWeek: 'Rabu', startTime: '07:00', endTime: '08:30', teacherId: 't1', classId: 'c7', subjectId: 'sub1', schoolId: 's1' },
-  { id: 'sch7', dayOfWeek: 'Rabu', startTime: '08:30', endTime: '10:00', teacherId: 't1', classId: 'c1', subjectId: 'sub1', schoolId: 's1' },
-  // Kamis
-  { id: 'sch8', dayOfWeek: 'Kamis', startTime: '07:00', endTime: '08:30', teacherId: 't1', classId: 'c4', subjectId: 'sub1', schoolId: 's1' },
-  { id: 'sch9', dayOfWeek: 'Kamis', startTime: '10:15', endTime: '11:45', teacherId: 't1', classId: 'c8', subjectId: 'sub1', schoolId: 's1' },
-  // Other teachers' schedules
-  { id: 'sch10', dayOfWeek: 'Senin', startTime: '07:00', endTime: '08:30', teacherId: 't2', classId: 'c3', subjectId: 'sub2', schoolId: 's1' },
-  { id: 'sch11', dayOfWeek: 'Senin', startTime: '08:30', endTime: '10:00', teacherId: 't3', classId: 'c1', subjectId: 'sub4', schoolId: 's1' },
-  { id: 'sch12', dayOfWeek: 'Senin', startTime: '10:15', endTime: '11:45', teacherId: 't4', classId: 'c2', subjectId: 'sub9', schoolId: 's1' },
-  { id: 'sch13', dayOfWeek: 'Selasa', startTime: '07:00', endTime: '08:30', teacherId: 't5', classId: 'c1', subjectId: 'sub3', schoolId: 's1' },
-  { id: 'sch14', dayOfWeek: 'Selasa', startTime: '08:30', endTime: '10:00', teacherId: 't6', classId: 'c4', subjectId: 'sub9', schoolId: 's1' },
-  { id: 'sch15', dayOfWeek: 'Rabu', startTime: '10:15', endTime: '11:45', teacherId: 't7', classId: 'c3', subjectId: 'sub5', schoolId: 's1' },
-];
+// ===== SCHEDULES (Senin-Sabtu, 08:00-22:00) =====
+// Time slots: 08:00-09:30, 09:45-11:15, 11:15-12:45, 13:30-15:00, 15:15-16:45, 17:00-18:30, 19:00-20:30, 20:30-22:00
+const timeSlots = [
+  { start: '08:00', end: '09:30' },
+  { start: '09:45', end: '11:15' },
+  { start: '11:15', end: '12:45' },
+  { start: '13:30', end: '15:00' }, // After Dzuhur break
+  { start: '15:15', end: '16:45' },
+  { start: '17:00', end: '18:30' },
+  { start: '19:00', end: '20:30' }, // After Maghrib break
+  { start: '20:30', end: '22:00' },
+] as const;
+
+const days: Schedule['dayOfWeek'][] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+// Teacher-subject mapping (each teacher teaches specific subjects)
+const teacherSubjectMap: Record<string, string[]> = {
+  t1: ['sub1'],          // Ahmad Fauzi → Matematika
+  t2: ['sub2', 'sub7'],  // Siti Nurhaliza → B. Indonesia, Sejarah
+  t3: ['sub4', 'sub5'],  // Budi Santoso → Fisika, Kimia
+  t4: ['sub9', 'sub11'], // Dewi Rahmawati → PAI, Fiqih
+  t5: ['sub3'],          // Hendra Wijaya → B. Inggris
+  t6: ['sub6', 'sub8'],  // Rizki Ramadhan → Biologi, Ekonomi
+  t7: ['sub10', 'sub12'],// Fatimah Zahra → Al-Quran Hadits, B. Arab
+  t8: ['sub1', 'sub4'],  // Nur Aini → Matematika, Fisika
+};
+
+const generatedSchedules: Schedule[] = [];
+let schId = 1;
+
+days.forEach((day, dayIdx) => {
+  timeSlots.forEach((slot, slotIdx) => {
+    // Each slot has multiple classes running in parallel, taught by different teachers
+    const teacherIds = Object.keys(teacherSubjectMap);
+    // Rotate class assignments per day+slot so each class gets a variety
+    const classIds = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
+
+    // Assign 4-6 parallel sessions per slot (not all 8 teachers teach every slot)
+    const sessionsPerSlot = slotIdx < 3 ? 6 : slotIdx < 6 ? 5 : 4; // Morning=6, Afternoon=5, Evening=4
+
+    for (let s = 0; s < sessionsPerSlot; s++) {
+      const tIdx = (dayIdx * 8 + slotIdx * 3 + s) % teacherIds.length;
+      const cIdx = (dayIdx * 3 + slotIdx + s) % classIds.length;
+      const teacherId = teacherIds[tIdx];
+      const subjects = teacherSubjectMap[teacherId];
+      const subjectId = subjects[(dayIdx + slotIdx) % subjects.length];
+
+      generatedSchedules.push({
+        id: `sch${schId++}`,
+        dayOfWeek: day,
+        startTime: slot.start,
+        endTime: slot.end,
+        teacherId,
+        classId: classIds[cIdx],
+        subjectId,
+        schoolId: 's1',
+      });
+    }
+  });
+});
+
+export const dummySchedules: Schedule[] = generatedSchedules;
 
 // ===== JOURNALS =====
 // ===== JOURNALS =====
