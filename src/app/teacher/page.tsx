@@ -32,11 +32,9 @@ function getScheduleStatus(startTime: string, endTime: string): JournalStatus {
   const end = new Date(now);
   end.setHours(eh, em, 0, 0);
   
-  const bufferBefore = new Date(start.getTime() - 15 * 60000);
-  const bufferAfter = new Date(end.getTime() + 30 * 60000);
-  
-  if (now < bufferBefore) return 'locked';
-  if (now >= bufferBefore && now <= bufferAfter) return 'active';
+  // Strict: only active during exact lesson time, no tolerance
+  if (now < start) return 'locked';
+  if (now >= start && now <= end) return 'active';
   return 'missed';
 }
 

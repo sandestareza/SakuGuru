@@ -32,14 +32,65 @@ function JournalContent() {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const webcamRef = useRef<Webcam>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [previewPhotoIndex, setPreviewPhotoIndex] = useState<number | null>(null);
 
   const schedule = state.schedules.find(s => s.id === scheduleId);
   const className = state.classes.find(c => c.id === schedule?.classId)?.name || '';
   const subjectName = state.subjects.find(s => s.id === schedule?.subjectId)?.name || '';
+  
+  // Check if current time is within the lesson period (strict: no tolerance)
+  const isWithinLessonTime = useMemo(() => {
+    if (!schedule) return false;
+    const now = new Date();
+    const [sh, sm] = schedule.startTime.split(':').map(Number);
+    const [eh, em] = schedule.endTime.split(':').map(Number);
+    const start = new Date(now);
+    start.setHours(sh, sm, 0, 0);
+    const end = new Date(now);
+    end.setHours(eh, em, 0, 0);
+    return now >= start && now <= end;
+  }, [schedule]);
+
   const students = useMemo(
     () => state.students.filter(s => s.classId === schedule?.classId),
     [state.students, schedule?.classId]
   );
+
+  // If outside lesson time, show blocked screen
+  if (!isWithinLessonTime) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center max-w-sm"
+        >
+          <div className="w-20 h-20 rounded-full bg-terra/10 flex items-center justify-center mx-auto mb-5">
+            <X className="w-10 h-10 text-terra" />
+          </div>
+          <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">
+            Diluar Jam Pelajaran
+          </h2>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+            Jurnal hanya bisa diisi saat jam pelajaran berlangsung.
+          </p>
+          {schedule && (
+            <p className="text-[10px] font-black text-nabawi bg-nabawi/10 inline-block px-3 py-1.5 rounded-xl mt-2 uppercase tracking-widest">
+              {schedule.startTime} — {schedule.endTime}
+            </p>
+          )}
+          <div className="mt-6">
+            <Button
+              onClick={() => router.back()}
+              className="rounded-2xl bg-nabawi text-white font-black uppercase tracking-widest px-6 h-12 shadow-lg"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Initialize attendance
   useMemo(() => {
@@ -58,7 +109,6 @@ function JournalContent() {
     if (photos.length >= 3 || !webcamRef.current) return;
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
-      // Apply watermark using canvas
       const img = new Image();
       img.src = imageSrc;
       img.onload = () => {
@@ -68,22 +118,86 @@ function JournalContent() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          
-          // Add watermark background
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-          ctx.fillRect(0, img.height - 60, img.width, 60);
 
-          // Add text
-          ctx.fillStyle = 'white';
-          ctx.font = '16px sans-serif';
-          ctx.fillText(`Foto Bukti KBM ${photos.length + 1}`, 10, img.height - 40);
+          const w = img.width;
+          const h = img.height;
+          const scale = Math.max(w / 640, 1);
           
-          ctx.font = '12px sans-serif';
-          ctx.fillText(`${new Date().toLocaleString('id-ID')}`, 10, img.height - 20);
-          
-          ctx.font = '10px sans-serif';
-          ctx.fillStyle = 'rgba(255,255,255,0.8)';
-          ctx.fillText('Pondok Pesantren Darussalam', 10, img.height - 5);
+          const now = new Date();
+          const hari = now.toLocaleDateString('id-ID', { weekday: 'long' });
+          const tanggal = now.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+          const waktu = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const instansi = 'PONDOK PESANTREN DARUSSALAM';
+          const mapel = subjectName.toUpperCase();
+          const kelas = className;
+          const fotoLabel = `BUKTI KBM #${photos.length + 1}`;
+
+          // Measurements
+          ctx.font = `900 ${Math.round(11 * scale)}px sans-serif`;
+          const w1 = ctx.measureText(fotoLabel).width;
+          ctx.font = `bold ${Math.round(16 * scale)}px sans-serif`;
+          const w2 = ctx.measureText(instansi).width;
+          ctx.font = `600 ${Math.round(13 * scale)}px sans-serif`;
+          const w3 = ctx.measureText(`${mapel}  •  ${kelas}`).width;
+          ctx.font = `500 ${Math.round(11 * scale)}px sans-serif`;
+          const w4 = ctx.measureText(`${hari}, ${tanggal}   |   ${waktu} WIB`).width;
+
+          const maxW = Math.max(w1, w2, w3, w4);
+          const padX = Math.round(20 * scale);
+          const padY = Math.round(18 * scale);
+          const cardW = maxW + (padX * 2);
+          const cardH = Math.round(100 * scale);
+          const cardX = Math.round(20 * scale);
+          const cardY = h - cardH - Math.round(20 * scale);
+
+          // Card Background (Dark transparent glass effect)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.beginPath();
+          ctx.roundRect(cardX, cardY, cardW, cardH, Math.round(16 * scale));
+          ctx.fill();
+
+          // Subtle inner border
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+          ctx.lineWidth = Math.round(1.5 * scale);
+          ctx.stroke();
+
+          // Accent line on the left
+          ctx.fillStyle = '#2D5A3D'; // nabawi
+          ctx.beginPath();
+          ctx.roundRect(cardX + Math.round(1 * scale), cardY + Math.round(16 * scale), Math.round(4 * scale), cardH - Math.round(32 * scale), Math.round(2 * scale));
+          ctx.fill();
+
+          // Text drawing setup
+          let textX = cardX + padX;
+          let textY = cardY + padY;
+
+          ctx.textBaseline = 'top';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+          ctx.shadowBlur = Math.round(4 * scale);
+          ctx.shadowOffsetY = Math.round(2 * scale);
+
+          // 1. Label
+          ctx.font = `900 ${Math.round(11 * scale)}px sans-serif`;
+          ctx.fillStyle = '#D4AF37'; // gold
+          ctx.fillText(fotoLabel, textX, textY);
+          textY += Math.round(16 * scale);
+
+          // 2. Instansi
+          ctx.font = `bold ${Math.round(16 * scale)}px sans-serif`;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(instansi, textX, textY);
+          textY += Math.round(22 * scale);
+
+          // 3. Mapel & Kelas
+          ctx.font = `600 ${Math.round(13 * scale)}px sans-serif`;
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.fillText(`${mapel}  •  ${kelas}`, textX, textY);
+          textY += Math.round(20 * scale);
+
+          // 4. Waktu
+          ctx.font = `500 ${Math.round(11 * scale)}px sans-serif`;
+          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          ctx.fillText(`${hari}, ${tanggal}   |   ${waktu} WIB`, textX, textY);
 
           const watermarkedSrc = canvas.toDataURL('image/jpeg', 0.8);
           setPhotos(prev => [...prev, watermarkedSrc]);
@@ -91,7 +205,7 @@ function JournalContent() {
         }
       };
     }
-  }, [photos.length]);
+  }, [photos.length, subjectName, className]);
 
   const removePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
@@ -343,103 +457,60 @@ function JournalContent() {
               exit={{ opacity: 0, y: -20 }}
               className="p-4 space-y-6 pb-28"
             >
-              {isCameraOpen ? (
-                <div className="fixed inset-0 z-100 bg-black flex flex-col">
-                  <div className="flex-1 relative flex items-center justify-center">
-                    <Webcam
-                      audio={false}
-                      ref={webcamRef}
-                      screenshotFormat="image/jpeg"
-                      videoConstraints={{ facingMode }}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-6 left-0 right-0 flex justify-between px-6">
-                      <button
-                        onClick={() => setFacingMode(prev => prev === "environment" ? "user" : "environment")}
-                        className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
-                      >
-                        <SwitchCamera className="w-6 h-6 text-white" />
-                      </button>
-                      <button
-                        onClick={() => setIsCameraOpen(false)}
-                        className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
-                      >
-                        <X className="w-6 h-6 text-white" />
-                      </button>
+              <div className="px-1">
+                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Bukti Foto KBM</h2>
+                <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight">Ambil foto suasana kelas (min. 1, maks. 3).</p>
+              </div>
+
+              {/* Photo Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {photos.map((photo, i) => (
+                  <motion.div 
+                    key={i} 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="relative aspect-square rounded-[1.8rem] overflow-hidden border-4 border-white shadow-xl shadow-gray-200/50"
+                  >
+                    <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-terra text-white flex items-center justify-center shadow-lg"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4">
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">Bukti KBM #{i + 1}</span>
                     </div>
-                    
-                    {/* Capture Button */}
-                    <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4">
-                      <p className="text-[10px] font-black text-white uppercase tracking-widest bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
-                        Foto Ke-{photos.length + 1}
-                      </p>
-                      <button
-                        onClick={capturePhoto}
-                        className="w-20 h-20 rounded-full border-[6px] border-white/30 bg-white/10 flex items-center justify-center backdrop-blur-md active:scale-90 transition-all"
-                      >
-                        <div className="w-14 h-14 rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]"></div>
-                      </button>
+                  </motion.div>
+                ))}
+
+                {photos.length < 3 && (
+                  <button
+                    onClick={() => setIsCameraOpen(true)}
+                    className="aspect-square rounded-[1.8rem] border-4 border-dashed border-gray-100 bg-white shadow-xl shadow-gray-200/30 flex flex-col items-center justify-center gap-3 hover:border-nabawi/30 hover:bg-nabawi/5 transition-all group"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-nabawi/5 flex items-center justify-center group-hover:bg-nabawi group-hover:text-white transition-all">
+                      <Camera className="w-7 h-7" />
                     </div>
-                  </div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ambil Foto</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-start gap-4 p-5 bg-gold/5 rounded-[1.5rem] border border-gold/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                   <ImageIcon className="w-16 h-16 text-gold" />
                 </div>
-              ) : (
-                <>
-                  <div className="px-1">
-                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Bukti Foto KBM</h2>
-                    <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight">Ambil foto suasana kelas (min. 1, maks. 3).</p>
-                  </div>
-
-                  {/* Photo Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {photos.map((photo, i) => (
-                      <motion.div 
-                        key={i} 
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="relative aspect-square rounded-[1.8rem] overflow-hidden border-4 border-white shadow-xl shadow-gray-200/50"
-                      >
-                        <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => removePhoto(i)}
-                          className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-terra text-white flex items-center justify-center shadow-lg"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-4">
-                          <span className="text-[10px] font-black text-white uppercase tracking-widest">Bukti KBM #{i + 1}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-
-                    {photos.length < 3 && (
-                      <button
-                        onClick={() => setIsCameraOpen(true)}
-                        className="aspect-square rounded-[1.8rem] border-4 border-dashed border-gray-100 bg-white shadow-xl shadow-gray-200/30 flex flex-col items-center justify-center gap-3 hover:border-nabawi/30 hover:bg-nabawi/5 transition-all group"
-                      >
-                        <div className="w-14 h-14 rounded-2xl bg-nabawi/5 flex items-center justify-center group-hover:bg-nabawi group-hover:text-white transition-all">
-                          <Camera className="w-7 h-7" />
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ambil Foto</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-start gap-4 p-5 bg-gold/5 rounded-[1.5rem] border border-gold/10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                       <ImageIcon className="w-16 h-16 text-gold" />
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
-                      <ImageIcon className="w-5 h-5 text-gold-dark" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gold-dark uppercase tracking-widest mb-1">Watermark Otomatis</p>
-                      <p className="text-[10px] font-bold text-gold-dark/70 leading-relaxed uppercase">
-                        Foto akan diberi label tanggal, waktu, dan instansi secara otomatis untuk validasi KBM.
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
+                <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
+                  <ImageIcon className="w-5 h-5 text-gold-dark" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gold-dark uppercase tracking-widest mb-1">Watermark Otomatis</p>
+                  <p className="text-[10px] font-bold text-gold-dark/70 leading-relaxed uppercase">
+                    Foto akan diberi label tanggal, waktu, dan instansi secara otomatis untuk validasi KBM.
+                  </p>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -495,7 +566,11 @@ function JournalContent() {
                    </div>
                    <div className="flex gap-2 overflow-x-auto pb-2">
                     {photos.map((photo, i) => (
-                      <div key={i} className="w-24 aspect-square rounded-[1.2rem] overflow-hidden border-2 border-white shadow-md shrink-0">
+                      <div 
+                        key={i} 
+                        onClick={() => setPreviewPhotoIndex(i)}
+                        className="w-24 aspect-square rounded-[1.2rem] overflow-hidden border-2 border-white shadow-md shrink-0 cursor-pointer hover:border-nabawi/30 transition-colors"
+                      >
                         <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                       </div>
                     ))}
@@ -548,6 +623,82 @@ function JournalContent() {
           )}
         </div>
       </div>
+
+      {/* Camera Overlay - rendered outside all transformed ancestors */}
+      {isCameraOpen && (
+        <div className="fixed inset-0 bg-black" style={{ zIndex: 9999 }}>
+          {/* Video Layer */}
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{ facingMode }}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Controls Layer - above video */}
+          <div className="absolute inset-0 flex flex-col" style={{ zIndex: 10 }}>
+            {/* Top Controls */}
+            <div className="flex justify-between px-6 pt-6">
+              <button
+                onClick={() => setFacingMode(prev => prev === "environment" ? "user" : "environment")}
+                className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
+              >
+                <SwitchCamera className="w-6 h-6 text-white" />
+              </button>
+              <button
+                onClick={() => setIsCameraOpen(false)}
+                className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Capture Button */}
+            <div className="flex flex-col items-center gap-4 pb-12 safe-bottom">
+              <p className="text-[10px] font-black text-white uppercase tracking-widest bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+                Foto Ke-{photos.length + 1}
+              </p>
+              <button
+                onClick={capturePhoto}
+                className="w-20 h-20 rounded-full border-[6px] border-white/30 bg-white/10 flex items-center justify-center backdrop-blur-md active:scale-90 transition-all"
+              >
+                <div className="w-14 h-14 rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Preview Overlay */}
+      {previewPhotoIndex !== null && photos[previewPhotoIndex] && (
+        <div className="fixed inset-0 bg-black/95 flex flex-col backdrop-blur-md" style={{ zIndex: 9999 }}>
+          {/* Header */}
+          <div className="flex justify-between items-center px-6 pt-6 pb-4">
+            <span className="text-white font-black text-xs uppercase tracking-widest">
+              Foto Ke-{previewPhotoIndex + 1}
+            </span>
+            <button
+              onClick={() => setPreviewPhotoIndex(null)}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          
+          {/* Image */}
+          <div className="flex-1 relative p-4 flex items-center justify-center">
+            <img 
+              src={photos[previewPhotoIndex]} 
+              alt={`Preview ${previewPhotoIndex + 1}`} 
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

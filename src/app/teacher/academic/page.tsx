@@ -219,6 +219,7 @@ export default function AcademicPage() {
                       max={100}
                       value={grade[field] ?? ''}
                       onChange={e => handleGradeChange(grade.id, field, e.target.value)}
+                      onFocus={e => e.target.select()}
                       className="h-10 text-center text-xs font-black rounded-xl bg-gray-50 border-white focus:bg-white focus:ring-0 shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
                     />
                   ))}

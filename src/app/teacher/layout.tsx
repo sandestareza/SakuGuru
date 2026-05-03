@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import BottomNav, { teacherNavItems } from '@/components/layout/BottomNav';
 import Topbar from '@/components/layout/Topbar';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { state } = useApp();
+
+  // Hide bottom nav on specific pages
+  const hideBottomNav = pathname.startsWith('/teacher/journal');
 
   useEffect(() => {
     if (!state.currentUser) {
@@ -28,10 +32,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       <div className="fixed bottom-[20%] left-[10%] w-[30%] h-[30%] bg-blue-400/5 rounded-full blur-[100px] pointer-events-none" />
 
       <Topbar />
-      <main className="pb-bottom-nav w-full lg:max-w-3/4 mx-auto flex-1 relative z-10">
+      <main className={`${hideBottomNav ? 'pb-4' : 'pb-bottom-nav'} w-full lg:max-w-3/4 mx-auto flex-1 relative z-10`}>
         {children}
       </main>
-      <BottomNav items={teacherNavItems} />
+      {!hideBottomNav && <BottomNav items={teacherNavItems} />}
     </div>
   );
 }
