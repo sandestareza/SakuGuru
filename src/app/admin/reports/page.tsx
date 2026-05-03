@@ -430,7 +430,8 @@ export default function ReportsPage() {
   const renderPreviewTable = () => {
     if (reportType === "jurnal") {
       const filteredJournals = state.journals.filter((j) => {
-        if (selectedClass !== "all" && j.classId !== selectedClass)
+        const schedule = state.schedules.find((s) => s.id === j.scheduleId);
+        if (selectedTeacher !== "all" && schedule?.teacherId !== selectedTeacher)
           return false;
         if (month && !j.date.startsWith(month)) return false;
         return true;
@@ -878,8 +879,8 @@ export default function ReportsPage() {
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-2">Parameter Laporan</p>
                 
                 <div className="grid grid-cols-1 gap-4">
-                  {/* Guru filter — only for jadwal_guru */}
-                  {reportType === 'jadwal_guru' && (
+                  {/* Guru filter — for jadwal_guru and jurnal */}
+                  {(reportType === 'jadwal_guru' || reportType === 'jurnal') && (
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-500 ml-1">PILIH GURU</label>
                       <div className="relative">
@@ -900,8 +901,8 @@ export default function ReportsPage() {
                     </div>
                   )}
 
-                  {/* Kelas filter — for jadwal, absensi, nilai, jurnal */}
-                  {reportType !== 'jadwal_guru' && (
+                  {/* Kelas filter — for jadwal, absensi, nilai */}
+                  {(reportType === 'jadwal' || reportType === 'absensi' || reportType === 'nilai') && (
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-500 ml-1">PILIH KELAS</label>
                       <div className="relative">
@@ -922,8 +923,8 @@ export default function ReportsPage() {
                     </div>
                   )}
 
-                  {/* Mapel filter — for jadwal_guru, nilai, jurnal */}
-                  {(reportType === 'jadwal_guru' || reportType === 'nilai' || reportType === 'jurnal') && (
+                  {/* Mapel filter — for jadwal_guru, nilai */}
+                  {(reportType === 'jadwal_guru' || reportType === 'nilai') && (
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-500 ml-1">MATA PELAJARAN</label>
                       <div className="relative">
