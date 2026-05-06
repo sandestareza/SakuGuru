@@ -459,7 +459,7 @@ function JournalContent() {
             >
               <div className="px-1">
                 <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Bukti Foto KBM</h2>
-                <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight">Ambil foto suasana kelas (min. 1, maks. 3).</p>
+                <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight">Ambil foto suasana kelas (wajib 1 foto).</p>
               </div>
 
               {/* Photo Grid */}
@@ -484,7 +484,7 @@ function JournalContent() {
                   </motion.div>
                 ))}
 
-                {photos.length < 3 && (
+                {photos.length < 1 && (
                   <button
                     onClick={() => setIsCameraOpen(true)}
                     className="aspect-square rounded-[1.8rem] border-4 border-dashed border-gray-100 bg-white shadow-xl shadow-gray-200/30 flex flex-col items-center justify-center gap-3 hover:border-nabawi/30 hover:bg-nabawi/5 transition-all group"

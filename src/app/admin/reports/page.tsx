@@ -651,6 +651,8 @@ export default function ReportsPage() {
         if (month && !j.date.startsWith(month)) return false;
         if (selectedClass !== "all" && j.classId !== selectedClass)
           return false;
+        if (selectedSubject !== "all" && j.subjectId !== selectedSubject)
+          return false;
         return true;
       });
 
@@ -923,8 +925,8 @@ export default function ReportsPage() {
                     </div>
                   )}
 
-                  {/* Mapel filter — for jadwal_guru, nilai */}
-                  {(reportType === 'jadwal_guru' || reportType === 'nilai') && (
+                  {/* Mapel filter — for jadwal_guru, nilai, absensi */}
+                  {(reportType === 'jadwal_guru' || reportType === 'nilai' || reportType === 'absensi') && (
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-500 ml-1">MATA PELAJARAN</label>
                       <div className="relative">
